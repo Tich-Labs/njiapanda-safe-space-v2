@@ -211,24 +211,9 @@ const Hadithi = () => {
     }
   };
 
-  // Auto-save generated story
-  useEffect(() => {
-    if (done && blocks.length > 0 && !generating) {
-      const text = blocks.filter(b => b.type === "text").map(b => b.content).join("\n\n");
-      const meta = storyMetaRef.current;
-      if (text) {
-        supabase.from("stories").insert({
-          text,
-          title: meta.protagonist ? `${meta.protagonist}'s Story` : null,
-          language: "English",
-          status: "approved",
-          source: "hadithi_ai",
-          abuse_type: meta.abuseType || null,
-          tags: ["ai-story", ...(meta.abuseType ? [meta.abuseType.split(" ")[0]] : []), promptRef.current.toLowerCase().split(" ")[0] || "general"],
-        });
-      }
-    }
-  }, [done, generating]);
+  // Stories are now shared explicitly via the "Share anonymously" button
+  // No auto-save — user controls when to publish
+
 
   return (
     <div className="min-h-screen pb-24" style={{ backgroundColor: "#091F1A" }}>
