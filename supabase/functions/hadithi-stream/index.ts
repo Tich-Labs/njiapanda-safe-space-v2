@@ -20,39 +20,128 @@ serve(async (req) => {
       );
     }
 
-    const agentUrl = Deno.env.get("HADITHI_AGENT_URL");
-    const agentToken = Deno.env.get("HADITHI_AGENT_TOKEN");
-
-    if (!agentUrl) {
+    const apiKey = Deno.env.get("LOVABLE_API_KEY");
+    if (!apiKey) {
       return new Response(
-        JSON.stringify({ error: "HADITHI_AGENT_URL not configured" }),
+        JSON.stringify({ error: "LOVABLE_API_KEY not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const headers: Record<string, string> = {
-      "Content-Type": "application/json",
-    };
-    if (agentToken) {
-      headers["Authorization"] = `Bearer ${agentToken}`;
-    }
+    const lang = language === "sw" ? "Swahili" : "English";
 
-    const upstreamResponse = await fetch(agentUrl, {
+    const systemPrompt = `You are Hadithi, a trauma-informed storyteller for Njiapanda — a platform that supports survivors of gender-based violence (GBV) in East Africa.
+
+Your role is to craft short, powerful fictional awareness stories that help people recognise patterns of abuse such as coercive control, financial abuse, emotional manipulation, physical violence, and digital surveillance.
+
+Guidelines:
+- Write in ${lang}
+- Stories should be 3-5 paragraphs, fictional, and powerful
+- Use relatable East African settings, names, and cultural context
+- Show the pattern of abuse clearly so readers can recognise warning signs
+- End with a brief empowering reflection or awareness message
+- Never glorify violence; always centre the survivor's perspective
+- Keep a warm, compassionate, and educational tone
+- If the user asks something unrelated to GBV awareness, gently redirect to awareness storytelling
+
+Format your response as a flowing narrative story. Do not use headers or bullet points.`;
+
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
-      headers,
-      body: JSON.stringify({ prompt, language: language || "en" }),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        stream: true,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: prompt },
+        ],
+        max_tokens: 2000,
+        temperature: 0.8,
+      }),
     });
 
-    if (!upstreamResponse.ok || !upstreamResponse.body) {
-      const errorText = await upstreamResponse.text().catch(() => "Unknown error");
+    if (!response.ok || !response.body) {
+      const errorText = await response.text().catch(() => "Unknown error");
+      console.error("AI gateway error:", response.status, errorText);
       return new Response(
-        JSON.stringify({ error: `Upstream error: ${upstreamResponse.status} — ${errorText}` }),
+        JSON.stringify({ error: `AI error: ${response.status}` }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Pipe SSE stream back to client
-    return new Response(upstreamResponse.body, {
+    // Transform OpenAI-compatible SSE stream into our custom SSE format
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    const encoder = new TextEncoder();
+
+    const stream = new ReadableStream({
+      async start(controller) {
+        let buffer = "";
+        let accumulated = "";
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+            buffer = lines.pop() || "";
+
+            for (const line of lines) {
+              if (!line.startsWith("data: ")) continue;
+              const data = line.slice(6).trim();
+              if (data === "[DONE]") continue;
+
+              try {
+                const parsed = JSON.parse(data);
+                const content = parsed.choices?.[0]?.delta?.content;
+                if (content) {
+                  accumulated += content;
+                  // Send text chunks as paragraphs when we hit double newlines
+                  if (accumulated.includes("\n\n")) {
+                    const parts = accumulated.split("\n\n");
+                    // Keep the last partial part in the accumulator
+                    accumulated = parts.pop() || "";
+                    for (const part of parts) {
+                      const trimmed = part.trim();
+                      if (trimmed) {
+                        controller.enqueue(
+                          encoder.encode(`data: ${JSON.stringify({ type: "text", content: trimmed })}\n\n`)
+                        );
+                      }
+                    }
+                  }
+                }
+              } catch {
+                // skip malformed chunks
+              }
+            }
+          }
+
+          // Flush remaining text
+          const remaining = accumulated.trim();
+          if (remaining) {
+            controller.enqueue(
+              encoder.encode(`data: ${JSON.stringify({ type: "text", content: remaining })}\n\n`)
+            );
+          }
+
+          // Send done event
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "done" })}\n\n`));
+        } catch (err) {
+          console.error("Stream processing error:", err);
+        } finally {
+          controller.close();
+        }
+      },
+    });
+
+    return new Response(stream, {
       headers: {
         ...corsHeaders,
         "Content-Type": "text/event-stream",
