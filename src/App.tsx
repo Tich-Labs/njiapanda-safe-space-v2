@@ -23,6 +23,8 @@ import Admin from "./pages/Admin";
 import AdminLogin from "./pages/AdminLogin";
 import WhyNjiapanda from "./pages/WhyNjiapanda";
 import Sauti from "./pages/Sauti";
+import Hadithi from "./pages/Hadithi";
+import ArchitectureDiagram from "./pages/ArchitectureDiagram";
 import NotFound from "./pages/NotFound";
 import EmergencyExitButton from "./components/EmergencyExitButton";
 import BottomNav from "./components/BottomNav";
