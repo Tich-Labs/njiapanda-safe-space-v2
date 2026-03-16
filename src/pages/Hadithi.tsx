@@ -52,6 +52,11 @@ const Hadithi = () => {
   const [shareAbuseType, setShareAbuseType] = useState("");
   const [sharing, setSharing] = useState(false);
   const [shareSubmitted, setShareSubmitted] = useState(false);
+  const [shareInputMode, setShareInputMode] = useState<"text" | "audio">("text");
+  const [aiFollowUp, setAiFollowUp] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [conversationHistory, setConversationHistory] = useState<Array<{ role: string; content: string }>>([]);
+  const [storyReady, setStoryReady] = useState(false);
   
   // Generate tab state
   const [prompt, setPrompt] = useState("");
