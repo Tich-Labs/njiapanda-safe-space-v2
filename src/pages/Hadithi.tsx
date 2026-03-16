@@ -385,20 +385,88 @@ const Hadithi = () => {
               ))}
             </select>
 
-            <textarea
-              value={shareText}
-              onChange={e => setShareText(e.target.value)}
-              placeholder="Share your experience. You can use any name or no name at all."
-              className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white/80 text-sm resize-none h-48 focus:outline-none focus:border-[#C4871A]/50 placeholder-white/20"
-            />
+            {/* Input mode toggle */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShareInputMode("text")}
+                className={`flex-1 flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+                  shareInputMode === "text"
+                    ? "bg-[#C4871A] text-[#091F1A]"
+                    : "bg-white/10 text-white/60 hover:bg-white/15"
+                }`}
+              >
+                <Type className="h-4 w-4" />
+                Type it
+              </button>
+              <button
+                onClick={() => setShareInputMode("audio")}
+                className={`flex-1 flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+                  shareInputMode === "audio"
+                    ? "bg-[#C4871A] text-[#091F1A]"
+                    : "bg-white/10 text-white/60 hover:bg-white/15"
+                }`}
+              >
+                <Mic className="h-4 w-4" />
+                Record it
+              </button>
+            </div>
 
-            <button
-              onClick={handleShareStory}
-              disabled={!shareText.trim() || !shareAbuseType || sharing}
-              className="w-full bg-[#C4871A] text-[#091F1A] font-semibold rounded-xl py-3 disabled:opacity-40 transition-all active:scale-95"
-            >
-              {sharing ? "Submitting..." : "Submit anonymously"}
-            </button>
+            {/* Audio recorder */}
+            {shareInputMode === "audio" && (
+              <AudioRecorder onTranscript={handleAudioTranscript} />
+            )}
+
+            {/* Text input (always visible when in text mode, or after audio transcription) */}
+            {(shareInputMode === "text" || shareText) && (
+              <textarea
+                value={shareText}
+                onChange={e => { setShareText(e.target.value); setStoryReady(false); setAiFollowUp(""); }}
+                placeholder="Share your experience. You can use any name or no name at all."
+                className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white/80 text-sm resize-none h-48 focus:outline-none focus:border-[#C4871A]/50 placeholder-white/20"
+              />
+            )}
+
+            {/* AI follow-up area */}
+            {aiFollowUp && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-xl border border-[#C4871A]/30 bg-[#C4871A]/10 p-4"
+              >
+                <p className="text-white/70 text-sm leading-relaxed">{aiFollowUp}</p>
+                <p className="text-xs text-white/30 mt-2 italic">
+                  You can add to your story above, or submit it as is.
+                </p>
+              </motion.div>
+            )}
+
+            {aiLoading && (
+              <div className="flex items-center justify-center gap-2 py-3">
+                <Loader2 className="h-4 w-4 animate-spin text-[#C4871A]" />
+                <span className="text-sm text-white/50">Listening...</span>
+              </div>
+            )}
+
+            {/* Action buttons */}
+            <div className="space-y-2">
+              {/* "Tell me more" — asks AI for follow-up before submitting */}
+              {shareText.trim() && shareAbuseType && !storyReady && !aiLoading && (
+                <button
+                  onClick={() => askForMoreContext(shareText)}
+                  className="w-full bg-white/10 text-white/70 font-medium rounded-xl py-3 text-sm hover:bg-white/15 transition-colors"
+                >
+                  ✨ Help me tell more of my story
+                </button>
+              )}
+
+              <button
+                onClick={handleShareStory}
+                disabled={!shareText.trim() || !shareAbuseType || sharing}
+                className="w-full bg-[#C4871A] text-[#091F1A] font-semibold rounded-xl py-3 disabled:opacity-40 transition-all active:scale-95"
+              >
+                {sharing ? "Submitting..." : "Submit anonymously"}
+              </button>
+            </div>
 
             {shareSubmitted && (
               <motion.p
