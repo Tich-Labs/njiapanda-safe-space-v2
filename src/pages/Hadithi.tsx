@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { BookOpen, PenLine, Sparkles, Heart, ArrowLeft, X, Mic, Type, Loader2 } from "lucide-react";
+import { BookOpen, PenLine, Sparkles, Heart, ArrowLeft, X, Mic, Type, Loader2, SendHorizonal } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Textarea } from "@/components/ui/textarea";
 import { useNavigate } from "react-router-dom";
@@ -522,10 +522,10 @@ const Hadithi = () => {
                           }
                         }}
                         disabled={!shareText.trim() || aiLoading}
-                        className="self-end bg-white/10 hover:bg-white/15 text-white/60 rounded-xl p-3 disabled:opacity-30 transition-colors"
+                        className="self-end bg-[#C4871A] hover:bg-[#C4871A]/80 text-[#091F1A] rounded-xl p-3 disabled:opacity-30 transition-colors"
                         aria-label="Send message"
                       >
-                        <Sparkles className="h-4 w-4" />
+                        <SendHorizonal className="h-4 w-4" />
                       </button>
                     </div>
                   )}
