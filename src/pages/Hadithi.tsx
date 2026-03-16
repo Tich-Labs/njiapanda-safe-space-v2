@@ -53,10 +53,9 @@ const Hadithi = () => {
   const [sharing, setSharing] = useState(false);
   const [shareSubmitted, setShareSubmitted] = useState(false);
   const [shareInputMode, setShareInputMode] = useState<"text" | "audio">("text");
-  const [aiFollowUp, setAiFollowUp] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
-  const [conversationHistory, setConversationHistory] = useState<Array<{ role: string; content: string }>>([]);
-  const [storyReady, setStoryReady] = useState(false);
+  const [chatMessages, setChatMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([]);
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
   
   // Generate tab state
   const [prompt, setPrompt] = useState("");
@@ -131,9 +130,7 @@ const Hadithi = () => {
       setShareSubmitted(true);
       setShareText("");
       setShareAbuseType("");
-      setAiFollowUp("");
-      setConversationHistory([]);
-      setStoryReady(false);
+      setChatMessages([]);
     } catch (err) {
       console.error(err);
     } finally {
@@ -141,28 +138,29 @@ const Hadithi = () => {
     }
   };
 
-  // Ask AI for follow-up context
+  // Ask AI for follow-up context (chat-style)
   const askForMoreContext = async (text: string) => {
     if (!text.trim() || !shareAbuseType) return;
+    
+    // Add user message to chat
+    const userMsg = { role: "user" as const, content: text };
+    const updatedHistory = [...chatMessages, userMsg];
+    setChatMessages(updatedHistory);
     setAiLoading(true);
+    
     try {
       const { data, error } = await supabase.functions.invoke("story-deepen", {
-        body: { story: text, abuseType: shareAbuseType, history: conversationHistory },
+        body: { story: text, abuseType: shareAbuseType, history: chatMessages },
       });
       if (error || !data?.reply) {
         toast.error("Could not get follow-up. You can still submit your story.");
-        setStoryReady(true);
         return;
       }
-      setAiFollowUp(data.reply);
-      setConversationHistory(prev => [
-        ...prev,
-        { role: "user", content: text },
-        { role: "assistant", content: data.reply },
-      ]);
+      setChatMessages(prev => [...prev, { role: "assistant" as const, content: data.reply }]);
+      // Scroll to bottom
+      setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     } catch {
       toast.error("Could not get follow-up. You can still submit your story.");
-      setStoryReady(true);
     } finally {
       setAiLoading(false);
     }
@@ -171,7 +169,7 @@ const Hadithi = () => {
   // Handle audio transcription result
   const handleAudioTranscript = (text: string) => {
     setShareText(prev => prev ? prev + "\n\n" + text : text);
-    setShareInputMode("text"); // Switch to text view so user can see/edit
+    setShareInputMode("text");
     toast.success("Audio transcribed! Review your story below.");
   };
 
@@ -420,37 +418,46 @@ const Hadithi = () => {
             {(shareInputMode === "text" || shareText) && (
               <textarea
                 value={shareText}
-                onChange={e => { setShareText(e.target.value); setStoryReady(false); setAiFollowUp(""); }}
+                onChange={e => setShareText(e.target.value)}
                 placeholder="Share your experience. You can use any name or no name at all."
                 className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white/80 text-sm resize-none h-48 focus:outline-none focus:border-[#C4871A]/50 placeholder-white/20"
               />
             )}
 
-            {/* AI follow-up area */}
-            {aiFollowUp && (
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="rounded-xl border border-[#C4871A]/30 bg-[#C4871A]/10 p-4"
-              >
-                <p className="text-white/70 text-sm leading-relaxed">{aiFollowUp}</p>
-                <p className="text-xs text-white/30 mt-2 italic">
-                  You can add to your story above, or submit it as is.
-                </p>
-              </motion.div>
-            )}
-
-            {aiLoading && (
-              <div className="flex items-center justify-center gap-2 py-3">
-                <Loader2 className="h-4 w-4 animate-spin text-[#C4871A]" />
-                <span className="text-sm text-white/50">Listening...</span>
+            {/* Chat-style conversation thread */}
+            {chatMessages.length > 0 && (
+              <div className="space-y-3 max-h-64 overflow-y-auto rounded-xl border border-white/10 bg-white/[0.02] p-3">
+                {chatMessages.map((msg, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`rounded-xl px-4 py-3 text-sm leading-relaxed ${
+                      msg.role === "user"
+                        ? "bg-white/10 text-white/70 ml-8"
+                        : "bg-[#C4871A]/10 border border-[#C4871A]/30 text-white/70 mr-8"
+                    }`}
+                  >
+                    <span className="block text-[10px] uppercase tracking-wider text-white/30 mb-1">
+                      {msg.role === "user" ? "You" : "Hadithi"}
+                    </span>
+                    {msg.content}
+                  </motion.div>
+                ))}
+                {aiLoading && (
+                  <div className="flex items-center gap-2 py-2 mr-8">
+                    <Loader2 className="h-4 w-4 animate-spin text-[#C4871A]" />
+                    <span className="text-sm text-white/50">Thinking...</span>
+                  </div>
+                )}
+                <div ref={chatEndRef} />
               </div>
             )}
 
             {/* Action buttons */}
             <div className="space-y-2">
               {/* "Tell me more" — asks AI for follow-up before submitting */}
-              {shareText.trim() && shareAbuseType && !storyReady && !aiLoading && (
+              {shareText.trim() && shareAbuseType && !aiLoading && (
                 <button
                   onClick={() => askForMoreContext(shareText)}
                   className="w-full bg-white/10 text-white/70 font-medium rounded-xl py-3 text-sm hover:bg-white/15 transition-colors"
