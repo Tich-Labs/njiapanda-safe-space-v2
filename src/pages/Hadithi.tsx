@@ -171,9 +171,9 @@ const Hadithi = () => {
 
   // Handle audio transcription result
   const handleAudioTranscript = (text: string) => {
-    setShareText(prev => prev ? prev + "\n\n" + text : text);
+    setChatMessages(prev => [...prev, { role: "user" as const, content: text }]);
     setShareInputMode("text");
-    toast.success("Audio transcribed! Review your story below.");
+    toast.success("Audio transcribed and added to your story!");
   };
 
   // Handle AI generation
