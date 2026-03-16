@@ -364,7 +364,7 @@ const Hadithi = () => {
 
             <button
               onClick={handleShareStory}
-              disabled={!shareText.trim() || sharing}
+              disabled={!shareText.trim() || !shareAbuseType || sharing}
               className="w-full bg-[#C4871A] text-[#091F1A] font-semibold rounded-xl py-3 disabled:opacity-40 transition-all active:scale-95"
             >
               {sharing ? "Submitting..." : "Submit anonymously"}
