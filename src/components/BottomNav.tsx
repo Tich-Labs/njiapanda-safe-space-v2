@@ -1,4 +1,4 @@
-import { Home, Shield, Phone, MapPin, Mic, MoreHorizontal, BookOpen, Heart, Handshake } from "lucide-react";
+import { Home, Shield, Phone, MapPin, Mic, MoreHorizontal, BookOpen, Heart, Handshake, Scroll } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
