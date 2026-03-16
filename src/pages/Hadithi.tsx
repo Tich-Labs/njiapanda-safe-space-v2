@@ -349,7 +349,7 @@ const Hadithi = () => {
               className="w-full bg-[#0F3D34] border border-white/20 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#C4871A]/50"
               style={{ backgroundColor: "#0F3D34", color: "white" }}
             >
-              <option value="" style={{ backgroundColor: "#0F3D34", color: "white" }}>Type of abuse (optional)</option>
+              <option value="" style={{ backgroundColor: "#0F3D34", color: "white" }}>Type of abuse (required)</option>
               {abuseTypes.map(t => (
                 <option key={t} value={t} style={{ backgroundColor: "#0F3D34", color: "white" }}>{t}</option>
               ))}
