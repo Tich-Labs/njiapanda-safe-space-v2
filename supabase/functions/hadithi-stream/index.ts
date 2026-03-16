@@ -29,6 +29,10 @@ const ABUSE_TYPE_MAP: Record<string, string> = {
   reproductive: "reproductive coercion",
   workplace: "workplace harassment and abuse of power",
   elder: "elder abuse",
+  financial: "financial abuse and economic control",
+  psychological: "psychological abuse and manipulation",
+  humiliation: "public humiliation and shaming",
+  child: "child marriage and forced unions",
 };
 
 function detectAbuseType(prompt: string): string {
@@ -36,7 +40,6 @@ function detectAbuseType(prompt: string): string {
   for (const [key, value] of Object.entries(ABUSE_TYPE_MAP)) {
     if (lower.includes(key)) return value;
   }
-  // Random if no match
   const types = Object.values(ABUSE_TYPE_MAP);
   return types[Math.floor(Math.random() * types.length)];
 }
@@ -47,8 +50,9 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, language, format = "multimedia" } = await req.json();
+    const { prompt, language, format = "illustrated" } = await req.json();
     const apiKey = Deno.env.get("GOOGLE_AI_STUDIO_API_KEY");
+    const lovableKey = Deno.env.get("LOVABLE_API_KEY");
 
     if (!apiKey) {
       return new Response(
@@ -57,10 +61,9 @@ serve(async (req) => {
       );
     }
 
-    const includeImages = format === "image_text" || format === "multimedia";
-    const includeAudio = format === "multimedia";
+    const includeImages = format === "illustrated";
 
-    // Generate diverse character details for each story
+    // Generate diverse character details
     const protagonist = pick(NAMES_FEMALE);
     const abuser = pick(NAMES_MALE);
     const location = pick(LOCATIONS);
@@ -74,7 +77,7 @@ serve(async (req) => {
       : `Write in third person about ${protagonist}.`;
 
     const imageInstruction = includeImages
-      ? ` Every two paragraphs, on its own line write: [IMAGE: brief description of a soft watercolour illustration showing the emotional mood of that moment].`
+      ? ` Every two paragraphs, on its own line write exactly: [IMAGE: brief visual description of the emotional mood]. Keep image descriptions under 20 words.`
       : "";
 
     const systemPrompt = `You are a trauma-informed awareness storyteller about gender-based violence in East Africa.
@@ -98,7 +101,6 @@ IMPORTANT RULES:
         : `Tell me a story about ${abuseType} set in ${location}`)
       : prompt;
 
-    // Use Google AI Studio API
     const geminiResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${apiKey}`,
       {
@@ -128,10 +130,10 @@ IMPORTANT RULES:
         const encode = (obj: object) =>
           new TextEncoder().encode(`data: ${JSON.stringify(obj)}\n\n`);
 
-        // Send metadata about the generated story so the client can tag it
+        // Send metadata
         controller.enqueue(encode({
           type: "meta",
-          abuseType: abuseType,
+          abuseType,
           protagonist,
           location,
         }));
@@ -142,27 +144,63 @@ IMPORTANT RULES:
         let paraBuffer = "";
 
         const generateImage = async (description: string): Promise<string | null> => {
+          // Use Lovable AI gateway for image generation
+          if (!lovableKey) {
+            console.error("LOVABLE_API_KEY not set, skipping image generation");
+            return null;
+          }
+
           try {
+            const imagePrompt = `A soft watercolour illustration: ${description}. East African context, muted emotional tones, gentle and dignified. No text or words in the image.`;
+
             const imageResponse = await fetch(
-              `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+              "https://ai.gateway.lovable.dev/v1/chat/completions",
               {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                  Authorization: `Bearer ${lovableKey}`,
+                  "Content-Type": "application/json",
+                },
                 body: JSON.stringify({
-                  contents: [{ parts: [{ text: `Generate a soft watercolour illustration: ${description}` }] }],
-                  generationConfig: { responseModalities: ["IMAGE", "TEXT"] }
+                  model: "google/gemini-3.1-flash-image-preview",
+                  messages: [
+                    { role: "user", content: imagePrompt },
+                  ],
                 }),
               }
             );
-            
-            if (imageResponse.ok) {
-              const data = await imageResponse.json();
-              const inlineData = data?.candidates?.[0]?.content?.parts?.[0]?.inlineData;
-              if (inlineData?.data) {
-                return `data:${inlineData.mimeType};base64,${inlineData.data}`;
+
+            if (!imageResponse.ok) {
+              console.error("Image generation failed:", imageResponse.status);
+              return null;
+            }
+
+            const data = await imageResponse.json();
+            // Check for inline image in the response
+            const content = data?.choices?.[0]?.message?.content;
+
+            // The Lovable AI gateway may return images as markdown or base64
+            // Check for base64 image in parts
+            const parts = data?.choices?.[0]?.message?.parts;
+            if (parts) {
+              for (const part of parts) {
+                if (part.inline_data?.mime_type?.includes("image")) {
+                  return `data:${part.inline_data.mime_type};base64,${part.inline_data.data}`;
+                }
               }
             }
-            console.error("Image generation failed:", await imageResponse.text());
+
+            // Check if content contains a markdown image
+            if (content) {
+              const mdMatch = content.match(/!\[.*?\]\((data:image\/[^)]+)\)/);
+              if (mdMatch) return mdMatch[1];
+
+              // Check for base64 data URI in content
+              const b64Match = content.match(/(data:image\/[a-z]+;base64,[A-Za-z0-9+/=]+)/);
+              if (b64Match) return b64Match[1];
+            }
+
+            console.error("No image found in response");
             return null;
           } catch (e) {
             console.error("Image error:", e);
@@ -176,7 +214,8 @@ IMPORTANT RULES:
 
           const imageMatch = trimmed.match(/^\[IMAGE:\s*(.+)\]$/i);
           if (imageMatch && includeImages) {
-            const description = imageMatch[1] + ", soft watercolour style, muted emotional tones, East African context";
+            const description = imageMatch[1];
+            // Emit a placeholder while generating
             controller.enqueue(encode({ type: "text", content: " " }));
             
             const imageUrl = await generateImage(description);
@@ -191,45 +230,6 @@ IMPORTANT RULES:
           }
 
           controller.enqueue(encode({ type: "text", content: trimmed }));
-
-          if (!includeAudio) return;
-
-          try {
-            const ttsResponse = await fetch(
-              `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  contents: [{ role: "user", parts: [{ text: `Read this aloud naturally: ${trimmed}` }] }],
-                  generationConfig: {
-                    responseModalities: ["AUDIO"],
-                    speech_config: {
-                      voice_config: {
-                        prebuilt_voice_config: { voice_name: "Aoede" },
-                      },
-                    },
-                  },
-                }),
-              }
-            );
-
-            if (ttsResponse.ok) {
-              const ttsData = await ttsResponse.json();
-              const audioPart = ttsData?.candidates?.[0]?.content?.parts?.find(
-                (p: any) => p.inlineData?.mimeType?.includes("audio")
-              );
-              if (audioPart?.inlineData) {
-                controller.enqueue(encode({
-                  type: "audio",
-                  data: audioPart.inlineData.data,
-                  mimeType: audioPart.inlineData.mimeType,
-                }));
-              }
-            }
-          } catch {
-            // Audio generation failed silently
-          }
         };
 
         while (true) {
