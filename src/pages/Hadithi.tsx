@@ -59,8 +59,8 @@ const Hadithi = () => {
   const [done, setDone] = useState(false);
   const promptRef = useRef("");
   const [lastGeneratedType, setLastGeneratedType] = useState<string>("");
-  const storyMetaRef = useRef<{ abuseType?: string; protagonist?: string; location?: string }>({});
-  const storyMetaRef = useRef<{ abuseType?: string; protagonist?: string; location?: string }>({});
+
+
 
   // Fetch stories — prioritize matching abuse type if user recently generated one
   useEffect(() => {
