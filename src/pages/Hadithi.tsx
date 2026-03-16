@@ -131,11 +131,48 @@ const Hadithi = () => {
       setShareSubmitted(true);
       setShareText("");
       setShareAbuseType("");
+      setAiFollowUp("");
+      setConversationHistory([]);
+      setStoryReady(false);
     } catch (err) {
       console.error(err);
     } finally {
       setSharing(false);
     }
+  };
+
+  // Ask AI for follow-up context
+  const askForMoreContext = async (text: string) => {
+    if (!text.trim() || !shareAbuseType) return;
+    setAiLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("story-deepen", {
+        body: { story: text, abuseType: shareAbuseType, history: conversationHistory },
+      });
+      if (error || !data?.reply) {
+        toast.error("Could not get follow-up. You can still submit your story.");
+        setStoryReady(true);
+        return;
+      }
+      setAiFollowUp(data.reply);
+      setConversationHistory(prev => [
+        ...prev,
+        { role: "user", content: text },
+        { role: "assistant", content: data.reply },
+      ]);
+    } catch {
+      toast.error("Could not get follow-up. You can still submit your story.");
+      setStoryReady(true);
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  // Handle audio transcription result
+  const handleAudioTranscript = (text: string) => {
+    setShareText(prev => prev ? prev + "\n\n" + text : text);
+    setShareInputMode("text"); // Switch to text view so user can see/edit
+    toast.success("Audio transcribed! Review your story below.");
   };
 
   // Handle AI generation
