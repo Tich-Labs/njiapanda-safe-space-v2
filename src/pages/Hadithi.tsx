@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import StoryBlock, { StoryBlockType } from "@/components/hadithi/StoryBlock";
 
 type HadithiTab = "read" | "share" | "generate";
-type StoryFormat = "text" | "image_text" | "multimedia";
+type StoryFormat = "text" | "illustrated";
 
 const abuseTypes = [
   "Physical",
