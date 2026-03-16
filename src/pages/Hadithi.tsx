@@ -485,7 +485,7 @@ const Hadithi = () => {
                     {/* Submit button */}
                     <button
                       onClick={handleShareStory}
-                      disabled={!shareText.trim() || sharing}
+                      disabled={(!shareText.trim() && chatMessages.length === 0) || sharing}
                       className="bg-[#C4871A] text-[#091F1A] font-semibold rounded-lg px-4 py-1.5 text-xs disabled:opacity-40 transition-all active:scale-95"
                     >
                       {sharing ? "…" : "Submit"}
