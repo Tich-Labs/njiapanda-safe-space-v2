@@ -390,10 +390,22 @@ const Hadithi = () => {
               Ask AI to generate a multimedia awareness story. The story is fictional — it helps you recognise abuse without having to name it directly.
             </p>
 
+            <select
+              value={generateAbuseType}
+              onChange={e => setGenerateAbuseType(e.target.value)}
+              className="w-full bg-[#0F3D34] border border-white/20 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#C4871A]/50"
+              style={{ backgroundColor: "#0F3D34", color: "white" }}
+            >
+              <option value="" style={{ backgroundColor: "#0F3D34", color: "white" }}>Select type of abuse (required)</option>
+              {abuseTypes.map(t => (
+                <option key={t} value={t} style={{ backgroundColor: "#0F3D34", color: "white" }}>{t}</option>
+              ))}
+            </select>
+
             <Textarea
               value={prompt}
               onChange={e => setPrompt(e.target.value)}
-              placeholder="Describe a scenario or type 'begin' to hear a story about recognising coercive control"
+              placeholder="Describe a scenario or type 'begin' to generate a story"
               className="min-h-[100px] border-white/10 bg-white/5 text-white placeholder:text-white/30 focus-visible:ring-[#C4871A]/50"
             />
 
