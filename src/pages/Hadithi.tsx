@@ -53,7 +53,7 @@ const Hadithi = () => {
   
   // Generate tab state
   const [prompt, setPrompt] = useState("");
-  const [format, setFormat] = useState<StoryFormat>("multimedia");
+  const [generateAbuseType, setGenerateAbuseType] = useState("");
   const [blocks, setBlocks] = useState<StoryBlockType[]>([]);
   const [generating, setGenerating] = useState(false);
   const [done, setDone] = useState(false);
