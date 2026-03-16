@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from "react";
-import { BookOpen, PenLine, Sparkles, Heart, Search, ArrowLeft, X } from "lucide-react";
+import { BookOpen, PenLine, Sparkles, Heart, Search, ArrowLeft, X, Mic, Type, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Textarea } from "@/components/ui/textarea";
 import { useNavigate, Navigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import StoryBlock, { StoryBlockType } from "@/components/hadithi/StoryBlock";
+import AudioRecorder from "@/components/AudioRecorder";
 
 type HadithiTab = "read" | "share" | "generate";
 type StoryFormat = "text" | "illustrated";
