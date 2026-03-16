@@ -133,7 +133,7 @@ const Hadithi = () => {
 
   // Handle AI generation
   const startGeneration = async () => {
-    if (!prompt.trim() || generating) return;
+    if (!prompt.trim() || !generateAbuseType || generating) return;
     setBlocks([]);
     setDone(false);
     setGenerating(true);
