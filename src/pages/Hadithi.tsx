@@ -60,8 +60,9 @@ const Hadithi = () => {
   const promptRef = useRef("");
   const [lastGeneratedType, setLastGeneratedType] = useState<string>("");
   const storyMetaRef = useRef<{ abuseType?: string; protagonist?: string; location?: string }>({});
+  const storyMetaRef = useRef<{ abuseType?: string; protagonist?: string; location?: string }>({});
 
-  // Fetch stories
+  // Fetch stories — prioritize matching abuse type if user recently generated one
   useEffect(() => {
     const fetchStories = async () => {
       setLoading(true);
@@ -70,7 +71,20 @@ const Hadithi = () => {
         .select("*")
         .eq("status", "approved")
         .order("created_at", { ascending: false });
-      setStories(data || []);
+      
+      let sorted = data || [];
+      // If user recently generated a story type, boost matching stories to top
+      const recentType = sessionStorage.getItem("hadithi-last-type");
+      if (recentType && sorted.length > 0) {
+        const matching = sorted.filter(s => 
+          s.abuse_type?.toLowerCase().includes(recentType.toLowerCase()) ||
+          s.tags?.some((t: string) => t.toLowerCase().includes(recentType.toLowerCase()))
+        );
+        const rest = sorted.filter(s => !matching.includes(s));
+        sorted = [...matching, ...rest];
+      }
+      
+      setStories(sorted);
       setLoading(false);
     };
     if (activeTab === "read") fetchStories();
