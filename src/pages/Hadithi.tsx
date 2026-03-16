@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { BookOpen, PenLine, Sparkles, Heart, ArrowLeft, X, Mic, Type, Loader2 } from "lucide-react";
+import { BookOpen, PenLine, Sparkles, Heart, ArrowLeft, X, Mic, Type, Loader2, SendHorizonal } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Textarea } from "@/components/ui/textarea";
 import { useNavigate } from "react-router-dom";
