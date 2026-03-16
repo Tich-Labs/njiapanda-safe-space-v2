@@ -142,22 +142,20 @@ const Hadithi = () => {
   const askForMoreContext = async (text: string) => {
     if (!text.trim() || !shareAbuseType) return;
     
-    // Add user message to chat
-    const userMsg = { role: "user" as const, content: text };
-    const updatedHistory = [...chatMessages, userMsg];
-    setChatMessages(updatedHistory);
+    const userMsg = { role: "user" as const, content: text.trim() };
+    setChatMessages(prev => [...prev, userMsg]);
     setAiLoading(true);
     
     try {
+      const allMessages = [...chatMessages, userMsg];
       const { data, error } = await supabase.functions.invoke("story-deepen", {
-        body: { story: text, abuseType: shareAbuseType, history: chatMessages },
+        body: { story: text, abuseType: shareAbuseType, history: allMessages },
       });
       if (error || !data?.reply) {
         toast.error("Could not get follow-up. You can still submit your story.");
         return;
       }
       setChatMessages(prev => [...prev, { role: "assistant" as const, content: data.reply }]);
-      // Scroll to bottom
       setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     } catch {
       toast.error("Could not get follow-up. You can still submit your story.");
