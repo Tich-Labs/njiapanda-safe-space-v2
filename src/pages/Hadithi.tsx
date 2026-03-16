@@ -153,7 +153,7 @@ const Hadithi = () => {
           apikey: anonKey,
           Authorization: `Bearer ${anonKey}`,
         },
-        body: JSON.stringify({ prompt: prompt.trim(), language: "en", format }),
+        body: JSON.stringify({ prompt: `${generateAbuseType}: ${prompt.trim()}`, language: "en", format }),
         signal: controller.signal,
       });
 
