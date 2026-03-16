@@ -270,16 +270,18 @@ Admin Login ──▶ Admin Portal
 | Payments | Stripe + M-Pesa + PayPal | M-Pesa from day one — built for Kenya |
 | SMS (planned) | [Africa's Talking](https://africastalking.com) | Low-data and feature phone access |
 
-### Google Cloud Services Used
+### Google Cloud / Gemini Models Used
 
-| Service | Usage |
-|---|---|
-| **Gemini 2.0 Flash Live API** | Sauti real-time voice agent (WebSocket, BidiGenerateContent) |
-| **Gemini 2.5 Flash** | Audio transcription for voice stories |
-| **Gemini 2.5 Flash Lite** | Story content moderation |
-| **Gemini 3 Flash Preview** | AI risk assessment briefs for conductors |
-| **Google AI Studio** | API key authentication for Gemini models |
-| **Vertex AI** (fallback) | Alternative auth path via service account |
+| Service | Model | Usage |
+|---|---|---|
+| **Gemini 2.0 Flash Live API** | `gemini-2.0-flash-live-001` | Sauti real-time voice agent (WebSocket, BidiGenerateContent) |
+| **Gemini 2.5 Flash** | `google/gemini-2.5-flash` | Hadithi awareness storytelling (SSE streaming) |
+| **Gemini 2.5 Flash** | `google/gemini-2.5-flash` | Audio transcription for voice stories |
+| **Gemini 2.5 Flash Lite** | `google/gemini-2.5-flash-lite` | Story content moderation |
+| **Gemini 3 Flash Preview** | `google/gemini-3-flash-preview` | AI risk assessment briefs for conductors |
+| **Google AI Studio** | — | API key authentication for Gemini Live |
+| **Lovable AI Gateway** | — | Proxied access to Gemini models for edge functions |
+| **Vertex AI** (fallback) | — | Alternative auth path via service account |
 
 ---
 
