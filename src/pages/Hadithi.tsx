@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { BookOpen, PenLine, Sparkles, Heart, ArrowLeft, X, Mic, Type, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Textarea } from "@/components/ui/textarea";
-import { useNavigate, Navigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import StoryBlock, { StoryBlockType } from "@/components/hadithi/StoryBlock";
