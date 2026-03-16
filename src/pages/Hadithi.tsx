@@ -115,21 +115,26 @@ const Hadithi = () => {
 
   // Handle share
   const handleShareStory = async () => {
-    if (!shareText.trim() || !shareAbuseType || sharing) return;
+    // Collect full story from all user messages in chat
+    const allUserText = chatMessages
+      .filter(m => m.role === "user")
+      .map(m => m.content)
+      .join("\n\n");
+    const fullText = allUserText || shareText.trim();
+    if (!fullText || !shareAbuseType || sharing) return;
     setSharing(true);
     try {
       await supabase.from("stories").insert({
-        title: shareText.split(".")[0].slice(0, 60) || "Anonymous",
-        text: shareText.trim(),
+        title: fullText.split(".")[0].slice(0, 60) || "Anonymous",
+        text: fullText,
         abuse_type: shareAbuseType || "other",
         language: "en",
         source: "user_submission",
         status: "pending",
-        message: shareText.trim(),
+        message: fullText,
       });
       setShareSubmitted(true);
       setShareText("");
-      setShareAbuseType("");
       setChatMessages([]);
     } catch (err) {
       console.error(err);
