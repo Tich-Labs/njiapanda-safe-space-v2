@@ -179,6 +179,16 @@ const Hadithi = () => {
             const event = JSON.parse(jsonStr);
             if (event.type === "done") {
               setDone(true);
+            } else if (event.type === "meta") {
+              storyMetaRef.current = {
+                abuseType: event.abuseType,
+                protagonist: event.protagonist,
+                location: event.location,
+              };
+              // Remember for story prioritization
+              if (event.abuseType) {
+                sessionStorage.setItem("hadithi-last-type", event.abuseType.split(" ")[0]);
+              }
             } else if (event.type === "text" && typeof event.content === "string") {
               setBlocks(prev => [...prev, { id: crypto.randomUUID(), type: "text", content: event.content }]);
             } else if (event.type === "image" && typeof event.url === "string") {
