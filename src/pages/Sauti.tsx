@@ -269,11 +269,27 @@ const Sauti = () => {
       processingTimeoutRef.current = null;
     }
 
+    // CRITICAL: Request mic access immediately in the click handler
+    // Browsers require getUserMedia to be called from a user gesture
+    let micStream: MediaStream;
+    try {
+      micStream = await navigator.mediaDevices.getUserMedia({
+        audio: { sampleRate: 16000, channelCount: 1 },
+      });
+      streamRef.current = micStream;
+    } catch {
+      setState("mic-error");
+      return;
+    }
+
     try {
       const { data, error } = await supabase.functions.invoke("sauti-session", {
         body: { language: lang },
       });
-      if (error || !data?.wsUrl) throw new Error(error?.message || "No session URL");
+      if (error || !data?.wsUrl) {
+        micStream.getTracks().forEach((t) => t.stop());
+        throw new Error(error?.message || "No session URL");
+      }
 
       sessionIdRef.current = data.sessionId;
 
@@ -287,6 +303,7 @@ const Sauti = () => {
       const connectTimeout = window.setTimeout(() => {
         if (ws.readyState !== WebSocket.OPEN) {
           ws.close();
+          micStream.getTracks().forEach((t) => t.stop());
           setState("idle");
         }
       }, 10000);
@@ -303,18 +320,9 @@ const Sauti = () => {
         if (hasMicStartedRef.current) return;
         hasMicStartedRef.current = true;
         clearSetupTimeout();
-
-        navigator.mediaDevices
-          .getUserMedia({ audio: { sampleRate: 16000, channelCount: 1 } })
-          .then((stream) => {
-            streamRef.current = stream;
-            setState("listening");
-            streamAudioToWs(stream, ws);
-          })
-          .catch(() => {
-            setState("mic-error");
-            ws.close();
-          });
+        // Mic stream already acquired — just start streaming
+        setState("listening");
+        streamAudioToWs(micStream, ws);
       };
 
       ws.onopen = () => {
@@ -336,7 +344,6 @@ const Sauti = () => {
                 parts: [
                   {
                     text: SAUTI_SYSTEM_PROMPT_EN,
-                    // Swahili: SAUTI_SYSTEM_PROMPT_SW - coming soon
                   },
                 ],
               },
