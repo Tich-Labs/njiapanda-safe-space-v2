@@ -261,7 +261,7 @@ Admin Login ──▶ Admin Portal
 | **AI Moderation** | [Google Gemini](https://ai.google.dev) via Lovable AI Gateway | Content safety screening for story submissions |
 | **AI Risk Assessment** | [Google Gemini](https://ai.google.dev) via Lovable AI Gateway | Structured risk briefs for conductors (tool calling) |
 | **AI Transcription** | [Google Gemini](https://ai.google.dev) via Lovable AI Gateway | Voice-to-text for story submissions |
-| **AI Storytelling** | [Google Gemini / ADK](https://ai.google.dev) | Hadithi awareness story generation with images |
+| **AI Storytelling** | [Google Gemini 2.5 Flash](https://ai.google.dev) via Lovable AI Gateway | Hadithi awareness story generation with SSE streaming |
 | Frontend + Build | [Lovable.ai](https://lovable.dev) + React + Vite + Tailwind | Mobile-first, trauma-informed UI |
 | Database + Auth | [Supabase](https://supabase.com) (via Lovable Cloud) | Postgres, RLS by role and zone, Realtime |
 | Backend Functions | Supabase Edge Functions (Deno) | 7 serverless functions for AI, payments, notifications |
