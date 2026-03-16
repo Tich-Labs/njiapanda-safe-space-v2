@@ -37,6 +37,7 @@ const Hadithi = () => {
   
   // Tab state
   const [activeTab, setActiveTab] = useState<HadithiTab>("read");
+  const [storyPublished, setStoryPublished] = useState(false);
   
   // Read tab state
   const [stories, setStories] = useState<any[]>([]);
