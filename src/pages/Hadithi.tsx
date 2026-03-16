@@ -432,7 +432,7 @@ const Hadithi = () => {
 
             <button
               onClick={startGeneration}
-              disabled={!prompt.trim() || generating}
+              disabled={!prompt.trim() || !generateAbuseType || generating}
               className="w-full bg-[#C4871A] text-[#091F1A] font-semibold rounded-xl py-3 disabled:opacity-40 transition-all active:scale-95"
             >
               {generating ? "Generating..." : "Generate Story"}
