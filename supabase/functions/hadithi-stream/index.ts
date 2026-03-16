@@ -192,57 +192,36 @@ IMPORTANT RULES:
             }
 
             const data = await imageResponse.json();
-            console.log("Image API response keys:", JSON.stringify(Object.keys(data)));
-            
-            const choice = data?.choices?.[0];
-            if (!choice) {
-              console.error("No choices in image response");
-              return null;
+            const message = data?.choices?.[0]?.message;
+            if (!message) return null;
+
+            // Check for images array (Lovable AI gateway format)
+            if (message.images && Array.isArray(message.images) && message.images.length > 0) {
+              const img = message.images[0];
+              // Could be a URL or base64
+              if (typeof img === "string") {
+                if (img.startsWith("data:") || img.startsWith("http")) return img;
+                return `data:image/png;base64,${img}`;
+              }
+              if (img.url) return img.url;
+              if (img.b64_json) return `data:image/png;base64,${img.b64_json}`;
+              if (img.data) return `data:${img.mime_type || "image/png"};base64,${img.data}`;
             }
-            
-            const message = choice.message;
-            console.log("Message keys:", JSON.stringify(Object.keys(message || {})));
-            
-            // Check for content array (multimodal response format)
-            if (Array.isArray(message?.content)) {
+
+            // Check for content array (multimodal response)
+            if (Array.isArray(message.content)) {
               for (const part of message.content) {
-                if (part.type === "image_url" && part.image_url?.url) {
-                  return part.image_url.url;
-                }
-                if (part.type === "image" && part.source?.data) {
-                  return `data:${part.source.media_type || "image/png"};base64,${part.source.data}`;
-                }
-                if (part.inline_data?.mime_type?.includes("image")) {
-                  return `data:${part.inline_data.mime_type};base64,${part.inline_data.data}`;
-                }
-              }
-            }
-            
-            // Check for parts (Gemini native format)
-            const parts = message?.parts;
-            if (parts) {
-              for (const part of parts) {
-                if (part.inline_data?.mime_type?.includes("image")) {
-                  return `data:${part.inline_data.mime_type};base64,${part.inline_data.data}`;
-                }
+                if (part.type === "image_url" && part.image_url?.url) return part.image_url.url;
               }
             }
 
-            // Check string content for base64 or markdown images
-            const content = typeof message?.content === "string" ? message.content : null;
-            if (content) {
-              // Markdown image with data URI
-              const mdMatch = content.match(/!\[.*?\]\((data:image\/[^)]+)\)/);
-              if (mdMatch) return mdMatch[1];
-
-              // Raw data URI
-              const b64Match = content.match(/(data:image\/[a-z]+;base64,[A-Za-z0-9+/=]+)/);
+            // Check string content for base64
+            if (typeof message.content === "string" && message.content) {
+              const b64Match = message.content.match(/(data:image\/[a-z]+;base64,[A-Za-z0-9+/=]+)/);
               if (b64Match) return b64Match[1];
-              
-              console.log("Content preview (first 200 chars):", content.substring(0, 200));
             }
 
-            console.error("No image found in response. Full response:", JSON.stringify(data).substring(0, 500));
+            console.error("No image found. Message keys:", JSON.stringify(Object.keys(message)));
             return null;
           } catch (e) {
             console.error("Image error:", e);
