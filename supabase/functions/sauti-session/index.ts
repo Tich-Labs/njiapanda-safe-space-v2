@@ -25,15 +25,26 @@ const base64ToBytes = (b64: string) =>
   Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
 
 const decodePossiblyBase64Json = <T,>(value: string): T => {
+  // Strip outer quotes if the secrets system wrapped the value
+  let trimmed = value.trim();
+  if ((trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+      (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
+    trimmed = trimmed.slice(1, -1);
+  }
+
   // 1) raw JSON
-  const trimmed = value.trim();
   if (trimmed.startsWith("{")) {
     return JSON.parse(trimmed) as T;
   }
 
   // 2) base64-encoded JSON
-  const decoded = new TextDecoder().decode(base64ToBytes(trimmed));
-  return JSON.parse(decoded) as T;
+  try {
+    const decoded = new TextDecoder().decode(base64ToBytes(trimmed));
+    return JSON.parse(decoded) as T;
+  } catch (e) {
+    console.error("Failed to decode service account key. First 20 chars:", JSON.stringify(trimmed.substring(0, 20)));
+    throw new Error(`Failed to decode service account key: ${e instanceof Error ? e.message : "unknown"}`);
+  }
 };
 
 const pemPkcs8ToBytes = (pem: string) => {
