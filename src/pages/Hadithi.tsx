@@ -130,9 +130,7 @@ const Hadithi = () => {
       setShareSubmitted(true);
       setShareText("");
       setShareAbuseType("");
-      setAiFollowUp("");
-      setConversationHistory([]);
-      setStoryReady(false);
+      setChatMessages([]);
     } catch (err) {
       console.error(err);
     } finally {
@@ -140,28 +138,29 @@ const Hadithi = () => {
     }
   };
 
-  // Ask AI for follow-up context
+  // Ask AI for follow-up context (chat-style)
   const askForMoreContext = async (text: string) => {
     if (!text.trim() || !shareAbuseType) return;
+    
+    // Add user message to chat
+    const userMsg = { role: "user" as const, content: text };
+    const updatedHistory = [...chatMessages, userMsg];
+    setChatMessages(updatedHistory);
     setAiLoading(true);
+    
     try {
       const { data, error } = await supabase.functions.invoke("story-deepen", {
-        body: { story: text, abuseType: shareAbuseType, history: conversationHistory },
+        body: { story: text, abuseType: shareAbuseType, history: chatMessages },
       });
       if (error || !data?.reply) {
         toast.error("Could not get follow-up. You can still submit your story.");
-        setStoryReady(true);
         return;
       }
-      setAiFollowUp(data.reply);
-      setConversationHistory(prev => [
-        ...prev,
-        { role: "user", content: text },
-        { role: "assistant", content: data.reply },
-      ]);
+      setChatMessages(prev => [...prev, { role: "assistant" as const, content: data.reply }]);
+      // Scroll to bottom
+      setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     } catch {
       toast.error("Could not get follow-up. You can still submit your story.");
-      setStoryReady(true);
     } finally {
       setAiLoading(false);
     }
@@ -170,7 +169,7 @@ const Hadithi = () => {
   // Handle audio transcription result
   const handleAudioTranscript = (text: string) => {
     setShareText(prev => prev ? prev + "\n\n" + text : text);
-    setShareInputMode("text"); // Switch to text view so user can see/edit
+    setShareInputMode("text");
     toast.success("Audio transcribed! Review your story below.");
   };
 
