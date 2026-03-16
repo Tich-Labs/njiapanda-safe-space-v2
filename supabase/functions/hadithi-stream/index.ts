@@ -51,12 +51,11 @@ serve(async (req) => {
 
   try {
     const { prompt, language, format = "illustrated" } = await req.json();
-    const apiKey = Deno.env.get("GOOGLE_AI_STUDIO_API_KEY");
     const lovableKey = Deno.env.get("LOVABLE_API_KEY");
 
-    if (!apiKey) {
+    if (!lovableKey) {
       return new Response(
-        JSON.stringify({ error: "GOOGLE_AI_STUDIO_API_KEY not set" }),
+        JSON.stringify({ error: "LOVABLE_API_KEY not set" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -101,26 +100,43 @@ IMPORTANT RULES:
         : `Tell me a story about ${abuseType} set in ${location}`)
       : prompt;
 
+    // Use Lovable AI gateway for text generation (streaming)
     const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${apiKey}`,
+      "https://ai.gateway.lovable.dev/v1/chat/completions",
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          Authorization: `Bearer ${lovableKey}`,
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
-          contents: [{ role: "user", parts: [{ text: userPrompt }] }],
-          systemInstruction: { parts: [{ text: systemPrompt }] },
-          generationConfig: {
-            temperature: 1.0,
-            maxOutputTokens: 8192,
-          },
+          model: "google/gemini-2.5-flash",
+          stream: true,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userPrompt },
+          ],
         }),
       }
     );
 
     if (!geminiResponse.ok) {
       const err = await geminiResponse.text();
+      const status = geminiResponse.status;
+      if (status === 429) {
+        return new Response(
+          JSON.stringify({ error: "Service is busy. Please try again in a moment." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (status === 402) {
+        return new Response(
+          JSON.stringify({ error: "Service temporarily unavailable." }),
+          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       return new Response(
-        JSON.stringify({ error: "Gemini API error", detail: err }),
+        JSON.stringify({ error: "AI gateway error", detail: err }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
