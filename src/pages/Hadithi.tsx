@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import StoryBlock, { StoryBlockType } from "@/components/hadithi/StoryBlock";
 
 type HadithiTab = "read" | "share" | "generate";
-type StoryFormat = "text" | "image_text" | "multimedia";
+type StoryFormat = "text" | "illustrated";
 
 const abuseTypes = [
   "Physical",
@@ -37,6 +37,7 @@ const Hadithi = () => {
   
   // Tab state
   const [activeTab, setActiveTab] = useState<HadithiTab>("read");
+  const [storyPublished, setStoryPublished] = useState(false);
   
   // Read tab state
   const [stories, setStories] = useState<any[]>([]);
@@ -54,7 +55,7 @@ const Hadithi = () => {
   // Generate tab state
   const [prompt, setPrompt] = useState("");
   const [generateAbuseType, setGenerateAbuseType] = useState("");
-  const [format, setFormat] = useState<StoryFormat>("multimedia");
+  const [format, setFormat] = useState<StoryFormat>("illustrated");
   const [blocks, setBlocks] = useState<StoryBlockType[]>([]);
   const [generating, setGenerating] = useState(false);
   const [done, setDone] = useState(false);
@@ -210,24 +211,9 @@ const Hadithi = () => {
     }
   };
 
-  // Auto-save generated story
-  useEffect(() => {
-    if (done && blocks.length > 0 && !generating) {
-      const text = blocks.filter(b => b.type === "text").map(b => b.content).join("\n\n");
-      const meta = storyMetaRef.current;
-      if (text) {
-        supabase.from("stories").insert({
-          text,
-          title: meta.protagonist ? `${meta.protagonist}'s Story` : null,
-          language: "English",
-          status: "approved",
-          source: "hadithi_ai",
-          abuse_type: meta.abuseType || null,
-          tags: ["ai-story", ...(meta.abuseType ? [meta.abuseType.split(" ")[0]] : []), promptRef.current.toLowerCase().split(" ")[0] || "general"],
-        });
-      }
-    }
-  }, [done, generating]);
+  // Stories are now shared explicitly via the "Share anonymously" button
+  // No auto-save — user controls when to publish
+
 
   return (
     <div className="min-h-screen pb-24" style={{ backgroundColor: "#091F1A" }}>
@@ -411,21 +397,21 @@ const Hadithi = () => {
 
             <div className="flex gap-2">
               {([
-                { id: "text", label: "Text" },
-                { id: "image_text", label: "Images" },
-                { id: "multimedia", label: "Full" },
-              ] as const).map(f => (
+                { id: "text" as const, label: "Text only", desc: "Fast" },
+                { id: "illustrated" as const, label: "Illustrated", desc: "With images" },
+              ]).map(f => (
                 <button
                   key={f.id}
                   onClick={() => setFormat(f.id)}
                   disabled={generating}
-                  className={`flex-1 rounded-lg px-3 py-2 text-sm transition-colors ${
+                  className={`flex-1 rounded-lg px-3 py-2.5 text-sm transition-colors ${
                     format === f.id
                       ? "bg-[#C4871A] text-[#091F1A]"
                       : "bg-white/10 text-white/60 hover:bg-white/15 disabled:opacity-40"
                   }`}
                 >
-                  {f.label}
+                  <span className="block font-medium">{f.label}</span>
+                  <span className="block text-xs opacity-70">{f.desc}</span>
                 </button>
               ))}
             </div>
@@ -456,21 +442,69 @@ const Hadithi = () => {
             {/* Post-generation CTAs */}
             {done && blocks.length > 0 && (
               <div className="space-y-3 mt-6 border-t border-white/10 pt-6">
-                <p className="text-white/50 text-sm italic text-center">
-                  If this story touches you, you don't have to go through this alone.
-                </p>
-                <button
-                  onClick={() => navigate("/sauti")}
-                  className="w-full bg-[#C4871A] text-[#091F1A] font-semibold rounded-xl py-3"
-                >
-                  Talk to Sauti
-                </button>
-                <button
-                  onClick={() => { setBlocks([]); setDone(false); setPrompt(""); setActiveTab("read"); }}
-                  className="w-full bg-white/5 text-white/60 rounded-xl py-3 text-sm"
-                >
-                  Read community stories
-                </button>
+                {!storyPublished ? (
+                  <>
+                    <p className="text-white/50 text-sm italic text-center">
+                      Would you like to share this story with the community?
+                    </p>
+                    <button
+                      onClick={async () => {
+                        const text = blocks.filter(b => b.type === "text").map(b => b.content).join("\n\n");
+                        const meta = storyMetaRef.current;
+                        if (text) {
+                          await supabase.from("stories").insert({
+                            text,
+                            title: meta.protagonist ? `${meta.protagonist}'s Story` : "Untitled",
+                            language: "English",
+                            status: "approved",
+                            source: "hadithi_ai",
+                            abuse_type: meta.abuseType || generateAbuseType || null,
+                            tags: ["ai-story", ...(meta.abuseType ? [meta.abuseType.split(" ")[0]] : [])],
+                          });
+                          setStoryPublished(true);
+                        }
+                      }}
+                      className="w-full bg-safe text-white font-semibold rounded-xl py-3 transition-all active:scale-95"
+                    >
+                      Share anonymously to library
+                    </button>
+                    <p className="text-xs text-white/30 text-center">
+                      🔒 Stories are shared anonymously — no personal data is attached
+                    </p>
+                  </>
+                ) : (
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-center text-sm text-green-400/70 italic"
+                  >
+                    ✅ Story shared anonymously with the community
+                  </motion.p>
+                )}
+
+                <div className="pt-2 space-y-2">
+                  <p className="text-white/50 text-sm italic text-center">
+                    If this story touches you, you don't have to go through this alone.
+                  </p>
+                  <button
+                    onClick={() => navigate("/sauti")}
+                    className="w-full bg-[#C4871A] text-[#091F1A] font-semibold rounded-xl py-3"
+                  >
+                    Talk to Sauti
+                  </button>
+                  <button
+                    onClick={() => { setBlocks([]); setDone(false); setPrompt(""); setStoryPublished(false); setGenerateAbuseType(""); }}
+                    className="w-full bg-white/10 text-white/60 rounded-xl py-3 text-sm"
+                  >
+                    Generate another story
+                  </button>
+                  <button
+                    onClick={() => { setBlocks([]); setDone(false); setPrompt(""); setStoryPublished(false); setActiveTab("read"); }}
+                    className="w-full bg-white/5 text-white/40 rounded-xl py-3 text-sm"
+                  >
+                    Read community stories
+                  </button>
+                </div>
               </div>
             )}
           </div>
