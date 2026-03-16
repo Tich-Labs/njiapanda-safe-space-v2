@@ -1,4 +1,4 @@
-import { Shield, MessageCircle, Phone, MapPin, Radio, Mic } from "lucide-react";
+import { Shield, MessageCircle, Phone, MapPin, Radio, Mic, Scroll } from "lucide-react";
 import heroImage from "@/assets/njiapanda_hero.png";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -45,6 +45,13 @@ const quickActions = [
     title: "Speak to Us",
     description: "Voice support — ongea nasi",
     path: "/sauti",
+    color: "bg-[#C4871A]/10 text-[#C4871A]",
+  },
+  {
+    icon: Scroll,
+    title: "Hadithi — Awareness Stories",
+    description: "AI-powered stories for GBV awareness",
+    path: "/hadithi",
     color: "bg-[#C4871A]/10 text-[#C4871A]",
   },
 ];

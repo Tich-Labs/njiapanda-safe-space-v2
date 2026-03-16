@@ -1,4 +1,4 @@
-import { Home, Shield, Phone, MapPin, Mic, MoreHorizontal, BookOpen, Heart, Handshake } from "lucide-react";
+import { Home, Shield, Phone, MapPin, Mic, MoreHorizontal, BookOpen, Heart, Handshake, Scroll } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -11,6 +11,7 @@ const primaryItems = [
 ];
 
 const moreItems = [
+  { icon: Scroll, label: "Hadithi", path: "/hadithi" },
   { icon: BookOpen, label: "Stories", path: "/stories" },
   { icon: MapPin, label: "Resources", path: "/resources" },
   { icon: Heart, label: "Why", path: "/why" },

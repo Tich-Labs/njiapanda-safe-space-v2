@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Mic, MicOff, CheckCircle2, Loader2 } from "lucide-react";
+import { Mic, MicOff, CheckCircle2, Loader2, Camera } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import SautiWaveform from "@/components/sauti/SautiWaveform";
@@ -30,15 +30,17 @@ const labels: Record<string, Record<Lang, string>> = {
     sw: "Sauti inakusikiliza wakati halisi.\nHakuna rekodi inayohifadhiwa.\nMazungumzo yako yanakusaidia kupata msaada.\nUnaweza kusimama wakati wowote.",
   },
   consentBtn: { en: "I understand — start", sw: "Naelewa — anza" },
-  micError: { 
-    en: "Microphone access is needed to use Sauti", 
-    sw: "Unahitaji ufikiaji wa kipaza sauti kutumia Sauti" 
+  micError: {
+    en: "Microphone access is needed to use Sauti",
+    sw: "Unahitaji ufikiaji wa kipaza sauti kutumia Sauti",
   },
   micErrorBody: {
     en: "Please allow microphone access in your browser to continue.\nYou may need to click the microphone icon in your address bar.",
-    sw: "Tafadhali ruhusu ufikiaji wa kipaza sauti kwenye kivinjari chako kuendelea.\nHuenda ukahitaji kubonyeza ikoni ya kipaza sauti kwenye upau wa anwani."
+    sw: "Tafadhali ruhusu ufikiaji wa kipaza sauti kwenye kivinjari chako kuendelea.\nHuenda ukahitaji kubonyeza ikoni ya kipaza sauti kwenye upau wa anwani.",
   },
   tryAgain: { en: "Try again", sw: "Jaribu tena" },
+  cameraOn: { en: "Camera on", sw: "Kamera imewashwa" },
+  tapCamera: { en: "Show camera", sw: "Onyesha kamera" },
 };
 
 const handleExit = () => {
@@ -53,6 +55,9 @@ const Sauti = () => {
     () => (sessionStorage.getItem("sauti-lang") as Lang) || "sw"
   );
   const [transcript, setTranscript] = useState<{ speaker: string; text: string }[]>([]);
+  const [interrupted, setInterrupted] = useState(false);
+  const [cameraActive, setCameraActive] = useState(false);
+
   const wsRef = useRef<WebSocket | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const sessionIdRef = useRef<string>("");
@@ -61,6 +66,10 @@ const Sauti = () => {
   const processingTimeoutRef = useRef<number | null>(null);
   const isCompletingRef = useRef(false);
   const hasMicStartedRef = useRef(false);
+  const modelIsSpeakingRef = useRef(false);
+  const videoStreamRef = useRef<MediaStream | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     sessionStorage.setItem("sauti-lang", lang);
@@ -78,9 +87,41 @@ const Sauti = () => {
       }
       wsRef.current?.close();
       streamRef.current?.getTracks().forEach((t) => t.stop());
+      videoStreamRef.current?.getTracks().forEach((t) => t.stop());
       audioOutCtxRef.current?.close().catch(() => {});
     };
   }, []);
+
+  // Vision: capture frames every 3s when camera is active
+  useEffect(() => {
+    if (!cameraActive || !videoStreamRef.current) return;
+
+    const interval = setInterval(() => {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      const ws = wsRef.current;
+      if (!video || !canvas || !ws || ws.readyState !== WebSocket.OPEN) return;
+
+      canvas.width = video.videoWidth || 320;
+      canvas.height = video.videoHeight || 240;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+      const base64 = dataUrl.split(",")[1];
+      if (base64) {
+        ws.send(
+          JSON.stringify({
+            realtime_input: {
+              media_chunks: [{ mime_type: "image/jpeg", data: base64 }],
+            },
+          })
+        );
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [cameraActive]);
 
   const t = useCallback((key: string) => labels[key]?.[lang] ?? key, [lang]);
 
@@ -112,7 +153,6 @@ const Sauti = () => {
   const playAudioChunk = (base64: string, mimeType?: string) => {
     const type = mimeType ?? "audio/wav";
 
-    // Vertex often returns raw PCM: "audio/pcm;rate=24000".
     if (type.includes("audio/pcm")) {
       const rate = Number(type.match(/rate=(\d+)/)?.[1] ?? 24000);
       const ctx = getOutCtx(rate);
@@ -136,7 +176,6 @@ const Sauti = () => {
       return;
     }
 
-    // Fallback (e.g. audio/wav)
     const bytes = bytesFromBase64(base64);
     const blob = new Blob([bytes], { type });
     const url = URL.createObjectURL(blob);
@@ -145,7 +184,6 @@ const Sauti = () => {
     audio.onended = () => URL.revokeObjectURL(url);
   };
 
-  /** Try to parse JSON signal payload from agent text */
   const tryParseSignal = (text: string) => {
     try {
       const match = text.match(/\{[^}]+\}/);
@@ -176,7 +214,6 @@ const Sauti = () => {
       resource_needed: payload?.resource_needed ?? "general_support",
     };
 
-    // Emergency: speak hotline number immediately
     if (normalizedPayload.urgency === "emergency") {
       const msg = new SpeechSynthesisUtterance(EMERGENCY_MSG[lang]);
       speechSynthesis.speak(msg);
@@ -198,14 +235,36 @@ const Sauti = () => {
 
     wsRef.current?.close();
     streamRef.current?.getTracks().forEach((t) => t.stop());
+    videoStreamRef.current?.getTracks().forEach((t) => t.stop());
+    setCameraActive(false);
     hasMicStartedRef.current = false;
     setState("ended");
+  };
+
+  const toggleCamera = async () => {
+    if (cameraActive) {
+      videoStreamRef.current?.getTracks().forEach((t) => t.stop());
+      videoStreamRef.current = null;
+      setCameraActive(false);
+      return;
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+      videoStreamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+      setCameraActive(true);
+    } catch {
+      // Camera access denied, silently ignore
+    }
   };
 
   const startSession = async () => {
     setState("connecting");
     isCompletingRef.current = false;
     hasMicStartedRef.current = false;
+    modelIsSpeakingRef.current = false;
 
     if (processingTimeoutRef.current) {
       window.clearTimeout(processingTimeoutRef.current);
@@ -220,12 +279,10 @@ const Sauti = () => {
 
       sessionIdRef.current = data.sessionId;
 
-      // Pass bearer token as query parameter for Vertex AI WebSocket auth
       const wsUrlWithAuth = `${data.wsUrl}?access_token=${encodeURIComponent(data.accessToken)}`;
       const ws = new WebSocket(wsUrlWithAuth);
       wsRef.current = ws;
 
-      // Timeout: if WebSocket doesn't open within 10s, reset
       const connectTimeout = window.setTimeout(() => {
         if (ws.readyState !== WebSocket.OPEN) {
           ws.close();
@@ -262,7 +319,6 @@ const Sauti = () => {
       ws.onopen = () => {
         clearTimeout(connectTimeout);
 
-        // Send Vertex AI setup message
         ws.send(
           JSON.stringify({
             setup: {
@@ -289,7 +345,6 @@ const Sauti = () => {
           })
         );
 
-        // Wait for setup acknowledgement before starting microphone stream
         setupTimeout = window.setTimeout(() => {
           if (!hasMicStartedRef.current) {
             beginMicCapture();
@@ -307,22 +362,34 @@ const Sauti = () => {
           }
 
           const serverContent = msg.serverContent ?? msg.server_content;
+
+          // Handle interruption acknowledgement
+          if (serverContent?.interrupted === true) {
+            modelIsSpeakingRef.current = false;
+            setInterrupted(true);
+            setTimeout(() => setInterrupted(false), 600);
+          }
+
+          // Handle turn complete
+          if (serverContent?.turnComplete || serverContent?.turn_complete) {
+            modelIsSpeakingRef.current = false;
+          }
+
           const modelTurn = serverContent?.modelTurn ?? serverContent?.model_turn;
           const parts = modelTurn?.parts ?? [];
 
-          // Handle audio and text from model
           if (parts.length > 0) {
             parts.forEach((part: any) => {
               const inlineData = part.inlineData ?? part.inline_data;
               const mimeType = inlineData?.mimeType ?? inlineData?.mime_type;
 
               if (mimeType?.includes("audio")) {
+                modelIsSpeakingRef.current = true;
                 playAudioChunk(inlineData.data, mimeType);
               }
 
               if (part.text) {
                 setTranscript((prev) => [...prev, { speaker: "Sauti", text: part.text }]);
-                // Check if agent returned signal JSON
                 const signal = tryParseSignal(part.text);
                 if (signal) completeSession(signal);
               }
@@ -342,6 +409,7 @@ const Sauti = () => {
         clearSetupTimeout();
         streamRef.current?.getTracks().forEach((t) => t.stop());
         hasMicStartedRef.current = false;
+        modelIsSpeakingRef.current = false;
         setState((current) => {
           if (current === "processing" && !isCompletingRef.current) return "ended";
           if (current === "connecting") return "idle";
@@ -360,7 +428,6 @@ const Sauti = () => {
     const source = audioContext.createMediaStreamSource(stream);
     const processor = audioContext.createScriptProcessor(4096, 1, 1);
 
-    // Keep processor alive without echo/feedback
     const silentGain = audioContext.createGain();
     silentGain.gain.value = 0;
 
@@ -372,6 +439,13 @@ const Sauti = () => {
       if (ws.readyState !== WebSocket.OPEN) return;
       const pcm = e.inputBuffer.getChannelData(0);
       const b64 = pcmToBase64(pcm);
+
+      // Interruption support: if model is speaking, send turn_complete first
+      if (modelIsSpeakingRef.current) {
+        ws.send(JSON.stringify({ client_content: { turn_complete: true } }));
+        modelIsSpeakingRef.current = false;
+      }
+
       ws.send(
         JSON.stringify({
           realtime_input: {
@@ -385,6 +459,8 @@ const Sauti = () => {
   const stopSession = () => {
     setState("processing");
     streamRef.current?.getTracks().forEach((t) => t.stop());
+    videoStreamRef.current?.getTracks().forEach((t) => t.stop());
+    setCameraActive(false);
 
     try {
       if (wsRef.current?.readyState === WebSocket.OPEN) {
@@ -397,7 +473,7 @@ const Sauti = () => {
         );
       }
     } catch {
-      // If signaling stop fails, fallback completion timeout below still protects user flow
+      // fallback completion timeout below still protects user flow
     }
 
     if (processingTimeoutRef.current) {
@@ -418,6 +494,10 @@ const Sauti = () => {
       className="fixed inset-0 flex flex-col items-center justify-center"
       style={{ backgroundColor: "#091F1A" }}
     >
+      {/* Hidden video + canvas for vision capture */}
+      <video ref={videoRef} autoPlay muted playsInline className="hidden" />
+      <canvas ref={canvasRef} className="hidden" />
+
       {/* Language toggle */}
       <div className="fixed top-3 left-3 z-50 flex gap-1">
         {(["en", "sw"] as Lang[]).map((l) => (
@@ -434,6 +514,14 @@ const Sauti = () => {
           </button>
         ))}
       </div>
+
+      {/* Camera active indicator */}
+      {cameraActive && (
+        <div className="fixed top-3 right-3 z-50 flex items-center gap-1.5 rounded-full bg-safe/20 px-3 py-1">
+          <span className="h-2 w-2 rounded-full bg-safe animate-pulse" />
+          <span className="font-mono text-xs text-safe">{t("cameraOn")}</span>
+        </div>
+      )}
 
       {/* Consent overlay */}
       <AnimatePresence>
@@ -484,7 +572,7 @@ const Sauti = () => {
             style={{ minWidth: 80, minHeight: 80 }}
             whileTap={{ scale: 0.92 }}
             aria-label={
-              state === "mic-error" ? t("tryAgain") : 
+              state === "mic-error" ? t("tryAgain") :
               state === "idle" ? t("tapToSpeak") : t("tapToEnd")
             }
           >
@@ -504,7 +592,7 @@ const Sauti = () => {
             )}
             <span
               className={`relative flex h-16 w-16 items-center justify-center rounded-full ${
-                state === "listening" ? "bg-emergency/20" : 
+                state === "listening" ? "bg-emergency/20" :
                 state === "mic-error" ? "bg-emergency/10" :
                 "bg-[#C4871A]/15"
               }`}
@@ -520,9 +608,26 @@ const Sauti = () => {
           </motion.button>
         )}
 
-        {/* Waveform (listening) */}
+        {/* Camera toggle button - visible during listening */}
         {state === "listening" && (
-          <SautiWaveform stream={streamRef.current} barCount={7} />
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            onClick={toggleCamera}
+            className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
+              cameraActive ? "bg-safe/20 text-safe" : "bg-white/10 text-white/50 hover:text-white/80"
+            }`}
+            aria-label={t("tapCamera")}
+          >
+            <Camera className="h-5 w-5" />
+          </motion.button>
+        )}
+
+        {/* Waveform (listening) - with interruption flash */}
+        {state === "listening" && (
+          <div className={`transition-colors duration-150 ${interrupted ? "rounded-lg ring-2 ring-warning/80" : ""}`}>
+            <SautiWaveform stream={streamRef.current} barCount={7} />
+          </div>
         )}
 
         {/* Timer (listening) */}
