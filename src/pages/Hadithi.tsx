@@ -108,7 +108,7 @@ const Hadithi = () => {
 
   // Handle share
   const handleShareStory = async () => {
-    if (!shareText.trim() || sharing) return;
+    if (!shareText.trim() || !shareAbuseType || sharing) return;
     setSharing(true);
     try {
       await supabase.from("stories").insert({
