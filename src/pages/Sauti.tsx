@@ -218,15 +218,31 @@ const Sauti = () => {
     }
 
     try {
-      await supabase.functions.invoke("sauti-complete", {
-        body: {
-          urgency: normalizedPayload.urgency,
-          zone: normalizedPayload.zone,
-          resource_needed: normalizedPayload.resource_needed,
-          language: lang,
-          sessionId: sessionIdRef.current,
-        },
-      });
+      const gcpUrl = import.meta.env.VITE_GCP_FUNCTION_URL || (import.meta.env.VITE_SUPABASE_PROJECT_ID ? `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}-uc.a.run.app` : null);
+      
+      if (gcpUrl) {
+        await fetch(`${gcpUrl}/sauti-complete`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            urgency: normalizedPayload.urgency,
+            zone: normalizedPayload.zone,
+            resource_needed: normalizedPayload.resource_needed,
+            language: lang,
+            sessionId: sessionIdRef.current,
+          }),
+        });
+      } else {
+        await supabase.functions.invoke("sauti-complete", {
+          body: {
+            urgency: normalizedPayload.urgency,
+            zone: normalizedPayload.zone,
+            resource_needed: normalizedPayload.resource_needed,
+            language: lang,
+            sessionId: sessionIdRef.current,
+          },
+        });
+      }
     } catch {
       // Signal still shown as received for user safety
     }
@@ -283,12 +299,32 @@ const Sauti = () => {
     }
 
     try {
-      const { data, error } = await supabase.functions.invoke("sauti-session", {
-        body: { language: lang },
-      });
-      if (error || !data?.wsUrl) {
+      const gcpUrl = import.meta.env.VITE_GCP_FUNCTION_URL || (import.meta.env.VITE_SUPABASE_PROJECT_ID ? `https://${import.meta.env.VITE_SUPABASE_PROJECT_ID}-uc.a.run.app` : null);
+      
+      let data: any;
+      
+      if (gcpUrl) {
+        const response = await fetch(`${gcpUrl}/sauti-session`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ language: lang }),
+        });
+        if (!response.ok) throw new Error(`Session failed: ${response.status}`);
+        data = await response.json();
+      } else {
+        const result = await supabase.functions.invoke("sauti-session", {
+          body: { language: lang },
+        });
+        if (result.error || !result.data?.wsUrl) {
+          micStream.getTracks().forEach((t) => t.stop());
+          throw new Error(result.error?.message || "No session URL");
+        }
+        data = result.data;
+      }
+      
+      if (!data?.wsUrl) {
         micStream.getTracks().forEach((t) => t.stop());
-        throw new Error(error?.message || "No session URL");
+        throw new Error("No session URL");
       }
 
       sessionIdRef.current = data.sessionId;

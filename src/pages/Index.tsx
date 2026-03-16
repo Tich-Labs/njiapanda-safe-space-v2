@@ -40,21 +40,21 @@ const quickActions = [
     path: "/helpline",
     color: "bg-emergency/10 text-emergency",
   },
-  {
-    icon: Mic,
-    title: "Speak to Us",
-    description: "Voice support — ongea nasi",
-    path: "/sauti",
-    color: "bg-[#C4871A]/10 text-[#C4871A]",
-  },
-  // Hadithi - coming soon
+  // Sauti hidden - voice feature coming soon
   // {
-  //   icon: Scroll,
-  //   title: "Hadithi — Awareness Stories",
-  //   description: "AI-powered stories for GBV awareness",
-  //   path: "/hadithi",
+  //   icon: Mic,
+  //   title: "Speak to Us",
+  //   description: "Voice support — ongea nasi",
+  //   path: "/sauti",
   //   color: "bg-[#C4871A]/10 text-[#C4871A]",
   // },
+  {
+    icon: Scroll,
+    title: "Hadithi",
+    description: "AI stories for GBV awareness",
+    path: "/hadithi",
+    color: "bg-[#C4871A]/10 text-[#C4871A]",
+  },
 ];
 
 const Index = () => {

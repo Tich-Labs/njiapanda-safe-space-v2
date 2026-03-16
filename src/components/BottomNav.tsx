@@ -6,7 +6,7 @@ import { useState } from "react";
 const primaryItems = [
   { icon: Home, label: "Home", path: "/" },
   { icon: Shield, label: "Safety", path: "/safety" },
-  { icon: Mic, label: "Speak", path: "/sauti" },
+  { icon: BookOpen, label: "Hadithi", path: "/hadithi" },
   { icon: Phone, label: "Helpline", path: "/helpline" },
 ];
 

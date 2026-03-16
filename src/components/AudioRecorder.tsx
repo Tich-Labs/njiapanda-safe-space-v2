@@ -118,17 +118,42 @@ export default function AudioRecorder({ onTranscript }: AudioRecorderProps) {
           const base64 = (reader.result as string).split(",")[1];
 
           try {
-            const { data, error } = await supabase.functions.invoke("transcribe-audio", {
-              body: { audio: base64, duration: elapsed },
-            });
+            // Use Google Speech-to-Text directly
+            const apiKey = import.meta.env.VITE_GOOGLE_AI_STUDIO_API_KEY;
+            if (!apiKey) {
+              throw new Error("No API key");
+            }
 
-            if (error || !data?.text) {
-              toast.error("Transcription failed. Please try again or type your story.");
+            const response = await fetch(
+              `https://speech.googleapis.com/v1/speech:recognize?key=${apiKey}`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  config: {
+                    encoding: "WEBM_OPUS",
+                    sampleRateHertz: 48000,
+                    languageCode: "en-US",
+                  },
+                  audio: { content: base64 },
+                }),
+              }
+            );
+
+            if (!response.ok) {
+              throw new Error("Speech API error");
+            }
+
+            const data = await response.json();
+            const transcription = data.results?.[0]?.alternatives?.[0]?.transcript || "";
+            
+            if (!transcription) {
+              toast.error("No speech detected. Please try again.");
               setState("ready");
               return;
             }
 
-            setTranscript(data.text);
+            setTranscript(transcription);
             setState("review");
           } catch {
             toast.error("Transcription failed. Please try again or type your story.");

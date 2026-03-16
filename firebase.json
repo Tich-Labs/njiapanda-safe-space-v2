@@ -23,5 +23,17 @@
         ]
       }
     ]
-  }
+  },
+  "functions": [
+    {
+      "source": "firebase/functions/hadithi-stream",
+      "codebase": "hadithi-stream",
+      "ignore": ["node_modules", "firebase.json"]
+    },
+    {
+      "source": "firebase/functions/sauti-gateway",
+      "codebase": "sauti-gateway",
+      "ignore": ["node_modules", "firebase.json"]
+    }
+  ]
 }

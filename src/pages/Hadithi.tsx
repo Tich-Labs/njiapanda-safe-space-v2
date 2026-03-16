@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Textarea } from "@/components/ui/textarea";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { getStories, addStory, incrementResonance } from "@/lib/localStories";
 import StoryBlock, { StoryBlockType } from "@/components/hadithi/StoryBlock";
 import AudioRecorder from "@/components/AudioRecorder";
 
@@ -60,7 +61,7 @@ const Hadithi = () => {
   // Generate tab state
   const [prompt, setPrompt] = useState("");
   const [generateAbuseType, setGenerateAbuseType] = useState("");
-  const [format, setFormat] = useState<StoryFormat>("illustrated");
+  const [format, setFormat] = useState<StoryFormat>("text");
   const [blocks, setBlocks] = useState<StoryBlockType[]>([]);
   const [generating, setGenerating] = useState(false);
   const [done, setDone] = useState(false);
@@ -72,13 +73,10 @@ const Hadithi = () => {
   useEffect(() => {
     const fetchStories = async () => {
       setLoading(true);
-      const { data } = await supabase
-        .from("stories")
-        .select("*")
-        .eq("status", "approved")
-        .order("created_at", { ascending: false });
       
-      let sorted = data || [];
+      // Use local storage for stories (no backend needed)
+      let sorted = getStories("approved");
+      
       // If user recently generated a story type, boost matching stories to top
       const recentType = sessionStorage.getItem("hadithi-last-type");
       if (recentType && sorted.length > 0) {
@@ -107,7 +105,7 @@ const Hadithi = () => {
 
   // Handle resonance
   const handleResonance = async (storyId: string) => {
-    await supabase.rpc("increment_resonance", { story_id: storyId });
+    incrementResonance(storyId);
     setStories(prev => prev.map(s => 
       s.id === storyId ? { ...s, resonance_count: (s.resonance_count || 0) + 1 } : s
     ));
@@ -124,14 +122,14 @@ const Hadithi = () => {
     if (!fullText || !shareAbuseType || sharing) return;
     setSharing(true);
     try {
-      await supabase.from("stories").insert({
+      await addStory({
         title: fullText.split(".")[0].slice(0, 60) || "Anonymous",
         text: fullText,
         abuse_type: shareAbuseType || "other",
         language: "en",
         source: "user_submission",
         status: "pending",
-        message: fullText,
+        tags: [],
       });
       setShareSubmitted(true);
       setShareText("");
@@ -143,30 +141,10 @@ const Hadithi = () => {
     }
   };
 
-  // Ask AI for follow-up context (chat-style)
+  // Ask AI for follow-up context (chat-style) - disabled for now
   const askForMoreContext = async (text: string) => {
-    if (!text.trim() || !shareAbuseType) return;
-    
-    const userMsg = { role: "user" as const, content: text.trim() };
-    setChatMessages(prev => [...prev, userMsg]);
-    setAiLoading(true);
-    
-    try {
-      const allMessages = [...chatMessages, userMsg];
-      const { data, error } = await supabase.functions.invoke("story-deepen", {
-        body: { story: text, abuseType: shareAbuseType, history: allMessages },
-      });
-      if (error || !data?.reply) {
-        toast.error("Could not get follow-up. You can still submit your story.");
-        return;
-      }
-      setChatMessages(prev => [...prev, { role: "assistant" as const, content: data.reply }]);
-      setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-    } catch {
-      toast.error("Could not get follow-up. You can still submit your story.");
-    } finally {
-      setAiLoading(false);
-    }
+    // Chat follow-up disabled - simple submit only
+    toast.info("Submit your story and we'll review it soon.");
   };
 
   // Handle audio transcription result
@@ -176,9 +154,15 @@ const Hadithi = () => {
     toast.success("Audio transcribed and added to your story!");
   };
 
+  const [retryAfter, setRetryAfter] = useState<number>(0);
+
   // Handle AI generation
   const startGeneration = async () => {
     if (!prompt.trim() || !generateAbuseType || generating) return;
+    if (retryAfter > 0) {
+      toast.error(`Please wait ${retryAfter}s before trying again`);
+      return;
+    }
     setBlocks([]);
     setDone(false);
     setGenerating(true);
@@ -187,67 +171,108 @@ const Hadithi = () => {
     const controller = new AbortController();
 
     try {
-      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
-      const url = `https://${projectId}.supabase.co/functions/v1/hadithi-stream`;
+      const googleApiKey = import.meta.env.VITE_GOOGLE_AI_STUDIO_API_KEY;
+      if (!googleApiKey) {
+        throw new Error("Google AI API key not configured");
+      }
 
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          apikey: anonKey,
-          Authorization: `Bearer ${anonKey}`,
-        },
-        body: JSON.stringify({ prompt: `${generateAbuseType}: ${prompt.trim()}`, language: "en", format }),
-        signal: controller.signal,
+      // Initialize Google GenAI SDK - use gemini-2.5-flash for multimodal
+      const genAI = new GoogleGenerativeAI(googleApiKey);
+      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+      const protagonist = ["Wanjiku", "Akinyi", "Fatuma", "Njeri", "Atieno", "Rehema", "Zawadi", "Nyambura", "Halima", "Zuri", "Makena", "Nyokabi", "Sifa"][Math.floor(Math.random() * 13)];
+      const abuser = ["Otieno", "Kamau", "Juma", "Ochieng", "Mwangi", "Hassan", "Kipchoge", "Barasa", "Mutua", "Ndung'u"][Math.floor(Math.random() * 10)];
+      const location = ["Kisumu", "Mombasa", "Nakuru", "Nairobi's Eastlands", "Eldoret", "Malindi", "Nyeri", "Machakos", "Kilifi", "Thika"][Math.floor(Math.random() * 10)];
+      const relationship = ["partner", "husband", "boyfriend", "uncle", "employer", "in-law", "neighbour", "colleague"][Math.floor(Math.random() * 8)];
+      const setting = ["rural village", "urban apartment", "market stall", "school compound", "small business"][Math.floor(Math.random() * 5)];
+      const perspective = Math.random() > 0.5 ? "first-person" : "third-person";
+
+      const useImages = format === "illustrated";
+      
+      const systemPrompt = `You are a trauma-informed awareness storyteller about gender-based violence in East Africa.
+
+IMPORTANT RULES:
+- Use these EXACT character details: protagonist is ${protagonist}, the abuser is ${relationship} named ${abuser}, set in ${location} near a ${setting}.
+- ${perspective === "first-person" ? `Write in first person as ${protagonist}.` : `Write in third person about ${protagonist}.`}
+- The story must focus on: ${generateAbuseType}.
+- Write 6-8 paragraphs. Show how the abuse develops gradually.
+- End by gently naming what happened and showing courage.
+- Use culturally specific East African details.
+- At the very end, add: "⚠️ This story is fictional and created for awareness purposes only."`;
+
+      const isGenericStart = prompt.trim().length < 10;
+      const userPrompt = isGenericStart 
+        ? `Tell me a story about ${generateAbuseType} set in ${location}`
+        : `${generateAbuseType}: ${prompt.trim()}`;
+
+      // Generate content with multimodal support
+      const result = await model.generateContent({
+        contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+        systemInstruction: { role: "user", parts: [{ text: systemPrompt }] },
+        generationConfig: {
+          temperature: 0.9,
+          topP: 0.95,
+          maxOutputTokens: 4096,
+        }
       });
 
-      if (!response.ok || !response.body) throw new Error("Stream failed");
+      // Store metadata
+      storyMetaRef.current = { abuseType: generateAbuseType, protagonist, location };
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { done: readerDone, value } = await reader.read();
-        if (readerDone) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          if (!line.startsWith("data: ")) continue;
-          const jsonStr = line.slice(6).trim();
-          if (!jsonStr) continue;
-
-          try {
-            const event = JSON.parse(jsonStr);
-            if (event.type === "done") {
-              setDone(true);
-            } else if (event.type === "meta") {
-              storyMetaRef.current = {
-                abuseType: event.abuseType,
-                protagonist: event.protagonist,
-                location: event.location,
-              };
-              // Remember for story prioritization
-              if (event.abuseType) {
-                sessionStorage.setItem("hadithi-last-type", event.abuseType.split(" ")[0]);
-              }
-            } else if (event.type === "text" && typeof event.content === "string") {
-              setBlocks(prev => [...prev, { id: crypto.randomUUID(), type: "text", content: event.content }]);
-            } else if (event.type === "image" && typeof event.url === "string") {
-              setBlocks(prev => [...prev, { id: crypto.randomUUID(), type: "image", url: event.url, alt: event.alt }]);
-            } else if (event.type === "audio" && typeof event.data === "string") {
-              setBlocks(prev => [...prev, { id: crypto.randomUUID(), type: "audio", data: event.data, mimeType: event.mimeType }]);
-            }
-          } catch {}
+      // Process response - handle both text and inline images
+      const response = result.response;
+      
+      // Get text content
+      let storyText = "";
+      if (response.candidates?.[0]?.content?.parts) {
+        for (const part of response.candidates[0].content.parts) {
+          if (part.text) {
+            storyText += part.text;
+          }
+          // Check for inline image data
+          if (part.inlineData) {
+            const imgUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+            setBlocks(prev => [...prev, { 
+              id: crypto.randomUUID(), 
+              type: "image", 
+              url: imgUrl, 
+              alt: "Story illustration" 
+            }]);
+          }
         }
       }
+      
+      if (!storyText) storyText = response.text() || "";
+
+      // Split into paragraphs
+      const paragraphs = storyText.split(/\n\n+/).filter(p => p.trim());
+      
+      for (const para of paragraphs) {
+        setBlocks(prev => [...prev, { id: crypto.randomUUID(), type: "text", content: para.trim() }]);
+      }
+
+      setDone(true);
     } catch (err: any) {
       if (err.name !== "AbortError") {
         console.error("AI stream error:", err);
+        
+        // Handle quota errors
+        if (err.message?.includes("429") || err.message?.includes("RESOURCE_EXHAUSTED")) {
+          toast.error("AI quota exceeded. Please wait a moment or upgrade your plan.");
+          // Set retry delay
+          setRetryAfter(20);
+          const interval = setInterval(() => {
+            setRetryAfter(prev => {
+              if (prev <= 1) {
+                clearInterval(interval);
+                return 0;
+              }
+              return prev - 1;
+            });
+          }, 1000);
+        } else {
+          toast.error(err.message || "Failed to generate story");
+        }
       }
     } finally {
       setGenerating(false);
@@ -273,7 +298,7 @@ const Hadithi = () => {
       </div>
 
       {/* Tab bar */}
-      <div className="flex border-b border-white/10 px-4 gap-1 sticky top-0 z-10" style={{ backgroundColor: "#091F1A" }}>
+      <div className="flex justify-center border-b border-white/10 px-4 gap-1 sticky top-0 z-10" style={{ backgroundColor: "#091F1A" }}>
         {[
           { id: "read", label: "Read stories", icon: BookOpen },
           { id: "share", label: "Share yours", icon: PenLine },
@@ -294,8 +319,8 @@ const Hadithi = () => {
         ))}
       </div>
 
-      {/* Tab Content */}
-      <div className="pt-4">
+      {/* Tab Content - centered in middle columns */}
+      <div className="pt-4 max-w-2xl mx-auto px-4">
         {/* READ TAB */}
         {activeTab === "read" && (
           <div className="space-y-4">
@@ -470,6 +495,7 @@ const Hadithi = () => {
                       <Type className="h-3 w-3" />
                       Type
                     </button>
+                    {/* Record button commented out - voice input disabled
                     <button
                       onClick={() => setShareInputMode("audio")}
                       className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs transition-colors ${
@@ -481,6 +507,7 @@ const Hadithi = () => {
                       <Mic className="h-3 w-3" />
                       Record
                     </button>
+                    */}
                     <div className="flex-1" />
                     {/* Submit button */}
                     <button
@@ -538,6 +565,20 @@ const Hadithi = () => {
         {/* GENERATE TAB */}
         {activeTab === "generate" && (
           <div className="p-4 space-y-4 max-w-lg mx-auto">
+            {/* Generated Story Display - shown FIRST like chat UI */}
+            <div className="space-y-4">
+              {blocks.map(block => (
+                <StoryBlock key={block.id} block={block} />
+              ))}
+              {generating && (
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-[#C4871A] animate-pulse" />
+                  <span className="text-sm text-white/50">Generating...</span>
+                </div>
+              )}
+            </div>
+
+            {/* Input Controls - shown BELOW the story */}
             <p className="text-white/50 text-sm">
               Ask AI to generate a multimedia awareness story. The story is fictional — it helps you recognise abuse without having to name it directly.
             </p>
@@ -563,8 +604,8 @@ const Hadithi = () => {
 
             <div className="flex gap-2">
               {([
-                { id: "text" as const, label: "Text only", desc: "Fast" },
-                { id: "illustrated" as const, label: "Illustrated", desc: "With images" },
+                { id: "text" as const, label: "Text only", desc: "Story only" },
+                { id: "illustrated" as const, label: "With Images", desc: "Story + illustrations" },
               ]).map(f => (
                 <button
                   key={f.id}
@@ -584,26 +625,13 @@ const Hadithi = () => {
 
             <button
               onClick={startGeneration}
-              disabled={!prompt.trim() || !generateAbuseType || generating}
+              disabled={!prompt.trim() || !generateAbuseType || generating || retryAfter > 0}
               className="w-full bg-[#C4871A] text-[#091F1A] font-semibold rounded-xl py-3 disabled:opacity-40 transition-all active:scale-95"
             >
-              {generating ? "Generating..." : "Generate Story"}
+              {generating ? "Generating..." : retryAfter > 0 ? `Wait ${retryAfter}s...` : "Generate Story"}
             </button>
 
             <p className="text-xs text-white/30 text-center">Stories are fictional and for awareness only</p>
-
-            {/* Generated Story Display */}
-            <div className="space-y-4 pt-4">
-              {blocks.map(block => (
-                <StoryBlock key={block.id} block={block} />
-              ))}
-              {generating && (
-                <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-[#C4871A] animate-pulse" />
-                  <span className="text-sm text-white/50">Generating...</span>
-                </div>
-              )}
-            </div>
 
             {/* Post-generation CTAs */}
             {done && blocks.length > 0 && (
@@ -618,16 +646,17 @@ const Hadithi = () => {
                         const text = blocks.filter(b => b.type === "text").map(b => b.content).join("\n\n");
                         const meta = storyMetaRef.current;
                         if (text) {
-                          await supabase.from("stories").insert({
+                          await addStory({
                             text,
                             title: meta.protagonist ? `${meta.protagonist}'s Story` : "Untitled",
                             language: "English",
                             status: "approved",
                             source: "hadithi_ai",
-                            abuse_type: meta.abuseType || generateAbuseType || null,
+                            abuse_type: meta.abuseType || generateAbuseType || undefined,
                             tags: ["ai-story", ...(meta.abuseType ? [meta.abuseType.split(" ")[0]] : [])],
                           });
                           setStoryPublished(true);
+                          toast.success("Story shared to community library!");
                         }
                       }}
                       className="w-full bg-safe text-white font-semibold rounded-xl py-3 transition-all active:scale-95"
@@ -652,12 +681,7 @@ const Hadithi = () => {
                   <p className="text-white/50 text-sm italic text-center">
                     If this story touches you, you don't have to go through this alone.
                   </p>
-                  <button
-                    onClick={() => navigate("/sauti")}
-                    className="w-full bg-[#C4871A] text-[#091F1A] font-semibold rounded-xl py-3"
-                  >
-                    Talk to Sauti
-                  </button>
+                  {/* Sauti hidden for submission - voice feature coming soon */}
                   <button
                     onClick={() => { setBlocks([]); setDone(false); setPrompt(""); setStoryPublished(false); setGenerateAbuseType(""); }}
                     className="w-full bg-white/10 text-white/60 rounded-xl py-3 text-sm"

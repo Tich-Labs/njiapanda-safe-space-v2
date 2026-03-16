@@ -1,0 +1,21 @@
+{
+  "name": "Njiapanda - Safe Space",
+  "short_name": "Njiapanda",
+  "description": "Connection to trusted help. A community-led GBV survivor support platform for Kenya.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#091F1A",
+  "theme_color": "#2D8A77",
+  "icons": [
+    {
+      "src": "/pwa-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/pwa-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

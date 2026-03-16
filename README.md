@@ -6,13 +6,13 @@
 *is this normal? Is this love? Or is this something I need to name?*
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-2D8A77.svg)](LICENSE)
-[![Live Platform](https://img.shields.io/badge/Platform-Live-C4871A.svg)](https://njiapanda-safetyapp.lovable.app)
-[![Built with Lovable](https://img.shields.io/badge/Built%20with-Lovable-E9A83A.svg)](https://lovable.dev)
+[![Live Platform](https://img.shields.io/badge/Platform-Live-C4871A.svg)](https://njiapanda-v2.web.app)
+[![Hosted on Firebase](https://img.shields.io/badge/Hosted-Firebase-FFCA28.svg)](https://firebase.google.com)
 [![Powered by Gemini](https://img.shields.io/badge/AI-Gemini%20Live-4285F4.svg)](https://ai.google.dev)
 [![Google Cloud](https://img.shields.io/badge/Cloud-Google%20Cloud-4285F4.svg)](https://cloud.google.com)
 [![DPG Aligned](https://img.shields.io/badge/DPG-Aligned-0F3D34.svg)](https://digitalpublicgoods.net)
 
-[🌍 Live Platform](https://njiapanda-safetyapp.lovable.app) · [📖 Why Njiapanda](https://njiapanda-safetyapp.lovable.app/why) · [🤝 Join the Network](https://njiapanda-safetyapp.lovable.app/join) · [💬 LinkedIn](https://www.linkedin.com/in/naijeriatoweett/)
+[🌍 Live Platform](https://njiapanda-v2.web.app) · [📖 Why Njiapanda](https://njiapanda-v2.web.app/why) · [🤝 Join the Network](https://njiapanda-v2.web.app/join) · [💬 LinkedIn](https://www.linkedin.com/in/naijeriatoweett/)
 
 ---
 
@@ -37,52 +37,13 @@ Njiapanda is a coordination layer — connecting survivors to trained community 
 
 | Journey | Who | What they do |
 |---|---|---|
-| 🟢 **Survivor** | Anonymous visitor | Reads a story, recognises abuse, speaks to Sauti (AI voice companion), submits a quiet signal, finds real organisations nearby, taps to call. No account. No trace. |
+| 🟢 **Survivor** | Anonymous visitor | Reads a story, recognises abuse, speaks to Hadithi (AI companion), submits a quiet signal, finds real organisations nearby, taps to call. No account. No trace. |
 | 🟡 **Conductor** | Trained community responder | Receives signals, assesses risk with AI support, coordinates safe house placement and referrals. |
 | 🔵 **Admin** | Platform manager | Manages conductors, moderates stories, monitors escalation alerts, reviews metrics. |
 
 ---
 
 ## Features & Functionalities
-
-### 🎙️ Sauti — Real-Time AI Voice Companion (Gemini Live API)
-The centrepiece of Njiapanda. Sauti ("voice" in Swahili) is a **real-time multimodal AI agent** powered by **Google Gemini 2.0 Flash Live API** that provides:
-- **Real-time voice conversation** — survivors speak in English or Kiswahili and receive instant spoken responses
-- **Trauma-informed AI counsellor** — trained system prompt for empathetic, non-judgmental support
-- **Voice interruption handling** — natural turn-taking with turn-complete signals
-- **Vision input** — optional camera toggle sends periodic snapshots (every 3 seconds) for visual context
-- **Live waveform visualiser** — real-time audio feedback during conversation
-- **No recordings saved** — session-only, privacy by design
-- **Consent-first** — clear explanation before any session begins
-- **Emergency detection** — automatic escalation when danger is identified
-- **Bilingual** — full UI and AI in English and Kiswahili
-
-**Tech:** WebSocket connection to Gemini BidiGenerateContent API via Google AI Studio / Vertex AI, with PCM16 audio streaming at 16kHz.
-
-### 📖 Hadithi — AI-Powered Multimodal Awareness Storytelling
-Interactive storytelling engine combining **three modes** for GBV awareness education:
-
-#### Read Stories
-- Browse approved community and AI-generated stories
-- Search and filter by abuse type
-- "This sounds familiar" resonance button (anonymous)
-- AI-generated stories clearly labelled
-
-#### Share Your Story (Chat-Style)
-- **ChatGPT-like conversational interface** — select abuse type, then type or record messages
-- **AI-assisted story deepening** — Hadithi AI asks follow-up questions to help survivors articulate their experience
-- **Voice input** — record audio, auto-transcribed via Gemini, added to conversation
-- **Full conversation submitted** — all user messages collected and saved anonymously
-- **AI content moderation** — automatic safety screening on submission
-
-#### Generate Awareness Stories
-- **AI-generated illustrated narratives** — Gemini 2.5 Flash creates culturally-specific stories
-- **Two formats:** Text-only (fast) or Illustrated (with AI-generated watercolour images)
-- **Image generation** — Gemini 3.1 Flash Image Preview creates contextual illustrations via Lovable AI Gateway
-- **SSE streaming** — stories appear progressively as they're generated
-- **Diverse characters** — randomised Kenyan names, locations, settings, perspectives, and abuse types
-- **Bilingual** — English and Kiswahili
-- **Disclaimer** — clear labelling that stories are fictional and for awareness only
 
 ### 📡 Quiet Help Signal
 Anonymous, no-login distress signal with:
@@ -92,14 +53,6 @@ Anonymous, no-login distress signal with:
 - **Consent toggle** — explicit opt-in for follow-up
 - **Calm confirmation** — reassuring screen after submission
 - **Emergency exit** — instant safe close to weather.com
-
-### 💬 Share Your Story (Standalone)
-Anonymous survivor story submission page:
-- **Text or voice** — write or record audio (transcribed via Gemini AI)
-- **Abuse type tagging** — Physical, Sexual, Emotional, Economic, Other
-- **Language selection** — English, Kiswahili, Sheng
-- **AI moderation** — automatic content safety screening via Gemini (flags PII, unsafe advice, gratuitous content)
-- **No account needed** — fully anonymous
 
 ### 🛡️ Safety Planning
 Interactive 6-step safety plan checklist:
@@ -134,6 +87,33 @@ Zone-filtered case management for trained responders:
 - **Voice source filter** — filter for voice-submitted signals
 - **Zone-scoped** — conductors only see their assigned zone's data
 
+### 📖 Hadithi — AI-Powered Multimodal Storytelling
+Interactive storytelling engine combining **three modes** for GBV awareness education:
+
+#### Read Stories
+- Browse approved community and AI-generated stories
+- Search and filter by abuse type
+- "This sounds familiar" resonance button (anonymous)
+- AI-generated stories clearly labelled
+
+#### Share Your Story (Chat-Style)
+- **ChatGPT-like conversational interface** — select abuse type, then type or record messages
+- **AI-assisted story deepening** — Hadithi AI asks follow-up questions to help survivors articulate their experience
+- **Voice input** — record audio, auto-transcribed via Gemini, added to conversation
+- **Full conversation submitted** — all user messages collected and saved anonymously
+- **AI content moderation** — automatic safety screening on submission
+
+#### Generate Awareness Stories
+- **AI-generated illustrated narratives** — Gemini 2.5 Flash creates culturally-specific stories
+- **Two formats:** Text-only (fast) or Illustrated (with AI-generated watercolour images)
+- **Image generation** — Gemini 3.1 Flash Image Preview creates contextual illustrations via Firebase Cloud Functions
+- **SSE streaming** — stories appear progressively as they're generated
+- **Diverse characters** — randomised Kenyan names, locations, settings, perspectives, and abuse types
+- **Bilingual** — English and Kiswahili
+- **Disclaimer** — clear labelling that stories are fictional and for awareness only
+
+**Tech:** Gemini 2.5 Flash (text), Gemini 3.1 Flash Image Preview (images), Firebase Cloud Functions, SSE streaming.
+
 ### 🔵 Admin Portal
 Full platform management with 12 tabs:
 - **Overview** — platform metrics and analytics
@@ -157,6 +137,14 @@ Tiered contribution system:
 - **M-Pesa** — direct mobile money (Paybill/Till Number)
 - **Stripe** — card payments with checkout
 - **PayPal** — international contributions
+
+### 💬 Share Your Story (Standalone)
+Anonymous survivor story submission page at `/share`:
+- **Text or voice** — write or record audio (transcribed via Gemini AI)
+- **Abuse type tagging** — Physical, Sexual, Emotional, Economic, Financial Abuse, Digital Surveillance, Isolation, Coercive Control, and more
+- **Language selection** — English, Kiswahili, Sheng
+- **AI moderation** — automatic content safety screening via Gemini (flags PII, unsafe advice, gratuitous content)
+- **No account needed** — fully anonymous
 
 ### 🤝 Join the Network
 Onboarding for three partner types:
@@ -197,12 +185,6 @@ Landing Page
     │         │
     │         └──▶ Generate ──▶ AI-illustrated awareness stories
     │                          Text + watercolour images
-    │
-    ├──▶ 🎙️ Sauti (Voice AI) ──▶ Speak in Swahili/English
-    │         │                      Real-time conversation
-    │         │                      Trauma-informed support
-    │         │                      Vision input (optional camera)
-    │         └──▶ Emergency detected ──▶ Helpline / Signal
     │
     ├──▶ 📡 Quiet Signal ──▶ Select urgency + resources
     │         │                No login, no trace
@@ -270,17 +252,17 @@ Admin Login ──▶ Admin Portal
 
 | Layer | Tool | Why |
 |---|---|---|
-| **AI Voice Agent** | [Google Gemini 2.0 Flash Live API](https://ai.google.dev) | Real-time multimodal voice conversation via WebSocket (BidiGenerateContent) |
-| **AI Storytelling** | [Google Gemini 2.5 Flash](https://ai.google.dev) via Lovable AI Gateway | Hadithi awareness story generation with SSE streaming |
-| **AI Image Generation** | [Google Gemini 3.1 Flash Image Preview](https://ai.google.dev) via Lovable AI Gateway | Watercolour illustrations for awareness stories |
-| **AI Story Deepening** | [Google Gemini](https://ai.google.dev) via Lovable AI Gateway | Chat-style follow-up questions to help survivors articulate stories |
-| **AI Moderation** | [Google Gemini 2.5 Flash Lite](https://ai.google.dev) via Lovable AI Gateway | Content safety screening for story submissions |
-| **AI Risk Assessment** | [Google Gemini 3 Flash Preview](https://ai.google.dev) via Lovable AI Gateway | Structured risk briefs for conductors (tool calling) |
-| **AI Transcription** | [Google Gemini 2.5 Flash](https://ai.google.dev) via Lovable AI Gateway | Voice recording → text transcription |
-| Frontend + Build | [Lovable.ai](https://lovable.dev) + React + Vite + Tailwind | Mobile-first, trauma-informed UI |
-| Database + Auth | [Supabase](https://supabase.com) (via Lovable Cloud) | Postgres, RLS by role and zone, Realtime |
-| Backend Functions | Supabase Edge Functions (Deno) | 10 serverless functions for AI, payments, notifications |
-| Cloud Run Agent | Python + FastAPI + Google ADK | Sauti ADK agent with triage + service lookup tools |
+| **AI Storytelling** | [Google Gemini 2.5 Flash](https://ai.google.dev) via Firebase Cloud Functions | Hadithi awareness story generation with SSE streaming |
+| **AI Image Generation** | [Google Gemini 3.1 Flash Image Preview](https://ai.google.dev) via Firebase Cloud Functions | Watercolour illustrations for awareness stories |
+| **AI Story Deepening** | [Google Gemini](https://ai.google.dev) via Firebase Cloud Functions | Chat-style follow-up questions to help survivors articulate stories |
+| **AI Moderation** | [Google Gemini 2.5 Flash Lite](https://ai.google.dev) via Firebase Cloud Functions | Content safety screening for story submissions |
+| **AI Risk Assessment** | [Google Gemini 3 Flash Preview](https://ai.google.dev) via Firebase Cloud Functions | Structured risk briefs for conductors (tool calling) |
+| **AI Transcription** | [Google Gemini 2.5 Flash](https://ai.google.dev) via Firebase Cloud Functions | Voice recording → text transcription |
+| Frontend | React + Vite + Tailwind CSS | Mobile-first, trauma-informed UI |
+| Hosting | [Firebase Hosting](https://firebase.google.com) | Global CDN, SSL, custom domains |
+| Database + Auth | [Firebase Firestore](https://firebase.google.com/firestore) + Firebase Auth | NoSQL database, user authentication, Realtime |
+| Serverless Functions | Firebase Cloud Functions | AI processing, payments, notifications |
+| Cloud Run Agent | Python + FastAPI + Google ADK | Hadithi agent with triage + service lookup tools (GCP) |
 | Interoperability | [OpenFN](https://openfn.org) | Bridge to DHIS2, Kobo, CommCare, Salesforce NPSP |
 | Maps | [Leaflet](https://leafletjs.com) + [OpenStreetMap](https://openstreetmap.org) | 100% open source, zone-level only |
 | Payments | Stripe + M-Pesa + PayPal | M-Pesa from day one — built for Kenya |
@@ -290,17 +272,16 @@ Admin Login ──▶ Admin Portal
 
 | Service | Model | Usage |
 |---|---|---|
-| **Gemini 2.0 Flash Live API** | `gemini-2.0-flash-live-001` | Sauti real-time voice agent (WebSocket, BidiGenerateContent) |
-| **Gemini 2.5 Flash** | `google/gemini-2.5-flash` | Hadithi awareness storytelling (SSE streaming) |
+| **Gemini 2.5 Flash** | `google/gemini-2.5-flash` | Hadithi awareness storytelling (SSE streaming via Firebase) |
 | **Gemini 2.5 Flash** | `google/gemini-2.5-flash` | Audio transcription for voice stories |
 | **Gemini 2.5 Flash** | `google/gemini-2.5-flash` | Story deepening chat (follow-up questions) |
 | **Gemini 2.5 Flash Lite** | `google/gemini-2.5-flash-lite` | Story content moderation |
 | **Gemini 3 Flash Preview** | `google/gemini-3-flash-preview` | AI risk assessment briefs for conductors |
 | **Gemini 3.1 Flash Image Preview** | `google/gemini-3.1-flash-image-preview` | AI-generated watercolour illustrations for stories |
-| **Google AI Studio** | — | API key authentication for Gemini Live |
-| **Lovable AI Gateway** | — | Proxied access to Gemini models for edge functions |
+| **Google AI Studio** | — | API key authentication for Gemini |
+| **Firebase Cloud Functions** | — | Serverless AI functions (hadithi-stream) |
 | **Vertex AI** (fallback) | — | Alternative auth path via service account |
-| **Cloud Run** | — | Sauti ADK Agent backend (FastAPI + Google ADK) |
+| **Cloud Run** | — | Hadithi ADK Agent backend (FastAPI + Google ADK) |
 
 ---
 
@@ -311,43 +292,57 @@ Admin Login ──▶ Admin Portal
 │                        USER (Browser)                        │
 │  React + Vite + Tailwind CSS + Framer Motion                │
 │  Mobile-first PWA · Emergency exit · Accessibility toolbar  │
-└──────────────┬──────────────┬──────────────┬─────────────────┘
-               │              │              │
-     ┌─────────▼──────┐ ┌────▼────┐ ┌───────▼──────────┐
-     │ Supabase Edge   │ │WebSocket│ │ Cloud Run        │
-     │ Functions (Deno)│ │ Direct  │ │ (Sauti ADK Agent)│
-     │                 │ │         │ │ FastAPI + ADK    │
-     │ • hadithi-stream│ │         │ │ • /session       │
-     │ • story-deepen  │ │         │ │ • /triage        │
-     │ • transcribe    │ │         │ │ • /lookup        │
-     │ • moderate      │ │         │ └───────┬──────────┘
-     │ • ai-brief      │ │         │         │
-     │ • forward-signal│ │         │         │
-     │ • create-checkout│ │        │         │
-     │ • stripe-webhook│ │         │         │
-     │ • notify-feedback│ │        │         │
-     │ • sauti-session │ │         │         │
-     │ • sauti-complete│ │         │         │
-     └────────┬────────┘ │         │         │
-              │          │         │         │
-     ┌────────▼────────┐ │    ┌────▼─────────▼──────┐
-     │ Lovable AI      │ │    │ Google Gemini API    │
-     │ Gateway         │ │    │                      │
-     │ (OpenAI-compat) │ │    │ • 2.0 Flash Live    │
-     │                 │ │    │   (BidiGenerateContent│
-     │ • gemini-2.5-   │ │    │    WebSocket)        │
-     │   flash         │ │    │                      │
-     │ • gemini-2.5-   │ │    └──────────────────────┘
-     │   flash-lite    │ │
-     │ • gemini-3-     │ │
-     │   flash-preview │ │
-     │ • gemini-3.1-   │ │
-     │   flash-image   │ │
-     └────────┬────────┘ │
-              │          │
-     ┌────────▼──────────▼───────┐
-     │     Supabase (Postgres)   │
-     │                           │
+└────────────────────────────┬─────────────────────────────────┘
+                             │
+              ┌──────────────▼──────────────┐
+              │     Firebase Hosting        │
+              │  (Static assets, PWA)      │
+              └──────────────┬──────────────┘
+                             │
+       ┌─────────────────────▼─────────────────────┐
+       │     Firebase Cloud Functions               │
+       │                                             │
+       │ • hadithi-stream (story generation)       │
+       │ • story-deepen (chat follow-ups)          │
+       │ • transcribe-audio (voice transcription) │
+       │ • moderate-story (content safety)         │
+       │ • ai-brief (risk assessment)             │
+       │ • create-checkout (Stripe)                │
+       │ • stripe-webhook (payments)               │
+       └────────────────────┬──────────────────────┘
+                           │
+       ┌────────────────────▼──────────────────────┐
+       │     Google Gemini API                    │
+       │                                           │
+       │ • gemini-2.5-flash (stories, transcription)│
+       │ • gemini-2.5-flash-lite (moderation)    │
+       │ • gemini-3-flash-preview (risk briefs)  │
+       │ • gemini-3.1-flash-image-preview (images)│
+       └───────────────────────────────────────────┘
+                           │
+       ┌────────────────────▼──────────────────────┐
+       │     Firebase Firestore                   │
+       │                                           │
+       │ • stories      • signals   • cases      │
+       │ • conductors   • resources  • safe_houses│
+       │ • profiles    • user_roles • feedback   │
+       │ • audit_log   • contributions           │
+       │ • partner_expressions                    │
+       │                                           │
+       │ Realtime: signal alerts                  │
+       └───────────────────────────────────────────┘
+                           │
+       ┌────────────────────▼──────────────────────┐
+       │     OpenFN (Webhooks)                     │
+       │                                           │
+       │ • DHIS2 health reporting                 │
+       │ • Kobo case management                   │
+       │ • CommCare workflows                     │
+       │ • Salesforce NPSP CRM                   │
+       └───────────────────────────────────────────┘
+```
+
+An interactive architecture diagram with PNG export is available at [`/architecture`](https://njiapanda-v2.web.app/architecture).
      │ • stories     • signals   │
      │ • cases       • conductors│
      │ • resources   • safe_houses│
@@ -371,30 +366,95 @@ Admin Login ──▶ Admin Portal
      └───────────────────────────┘
 ```
 
-An interactive architecture diagram with PNG export is available at [`/architecture`](https://njiapanda-safetyapp.lovable.app/architecture).
+An interactive architecture diagram with PNG export is available at [`/architecture`](https://njiapanda-v2.web.app/architecture).
 
 ---
 
 ## Edge Functions
 
-| Function | Purpose | AI Model |
+| Function | Platform | Purpose | AI Model |
+|---|---|---|---|
+| `hadithi-stream` | Firebase Cloud Functions | SSE streaming awareness story generation | Gemini 2.5 Flash |
+| `story-deepen` | Firebase Cloud Functions | Chat-style AI follow-up questions to help survivors expand stories | Gemini 2.5 Flash |
+| `transcribe-audio` | Firebase Cloud Functions | Voice recording → text transcription | Gemini 2.5 Flash |
+| `moderate-story` | Firebase Cloud Functions | AI content safety screening for submissions | Gemini 2.5 Flash Lite |
+| `ai-brief` | Firebase Cloud Functions | Structured risk assessment for conductors | Gemini 3 Flash Preview |
+| `forward-signal` | Firebase Cloud Functions | Webhook relay to OpenFN for external integrations | — |
+| `notify-feedback` | Firebase Cloud Functions | Feedback notification routing | — |
+| `create-checkout` | Firebase Cloud Functions | Stripe checkout session creation | — |
+| `stripe-webhook` | Firebase Cloud Functions | Stripe payment confirmation handling | — |
+
+### GCP Cloud Run (Hadithi Agent)
+
+| Function | Purpose | Tech |
 |---|---|---|
-| `sauti-session` | Provisions WebSocket credentials for Gemini Live voice sessions | Gemini 2.0 Flash Live |
-| `sauti-complete` | Post-session processing and signal creation | — |
-| `hadithi-stream` | SSE streaming awareness story generation with image generation | Gemini 2.5 Flash + Gemini 3.1 Flash Image Preview |
-| `story-deepen` | Chat-style AI follow-up questions to help survivors expand stories | Gemini (via Lovable AI Gateway) |
-| `transcribe-audio` | Voice recording → text transcription | Gemini 2.5 Flash |
-| `moderate-story` | AI content safety screening for submissions | Gemini 2.5 Flash Lite |
-| `ai-brief` | Structured risk assessment for conductors | Gemini 3 Flash Preview |
-| `forward-signal` | Webhook relay to OpenFN for external integrations | — |
-| `notify-feedback` | Feedback notification routing | — |
-| `create-checkout` | Stripe checkout session creation | — |
-| `stripe-webhook` | Stripe payment confirmation handling | — |
+| `hadithi-gateway` | Python FastAPI backend for story generation with ADK tools | Python + FastAPI + Google ADK |
 
 ---
 
 ## Data Model
 
+```
+stories          signals          cases
+───────         ────────         ────────
+id               id               id
+title            urgency          signal_id → signals
+text             zone             conductor_id → conductors
+swahili_text     resource_needed  status
+english_simple   consent          risk_level
+swahili_simple   language         notes
+abuse_type       source           zone
+message          created_at       updated_at
+tags
+status
+resonance_count
+language
+source
+
+conductors       resources        safe_houses
+───────         ────────         ────────
+id               id               id
+name             name             zone
+zone             type             capacity_status
+role             zone             type
+active           contact          updated_at
+                  hours
+                  verified
+
+profiles         user_roles       feedback
+───────         ────────         ────────
+id               id               id
+full_name        user_id          type (bug/contact/suggestion/other)
+zone             role (admin/     message
+created_at       conductor/user)  email
+                                   page_url
+                                   status
+                                   resolved_at / resolved_by
+
+partner_expressions    contributions    platform_config    audit_log
+───────               ────────         ────────           ────────
+id                     id               key                id
+name                   total_amount     value (JSON)       action
+type                   contribution_    updated_at         entity_type
+organisation           count            updated_by         entity_id
+role                   updated_at                          actor_id
+zone                                                      details (JSON)
+contact_email/phone                                        created_at
+message
+status
+extra (JSON)
+
+Firebase Firestore (Voice Session Signals)
+───────────────
+signals (collection)
+├── urgency
+├── zone
+├── resource_needed
+├── source: 'sauti_voice'
+├── language
+├── consent
+├── sessionId
+└── createdAt
 ```
 stories          signals          cases
 ────────         ────────         ────────
@@ -456,12 +516,13 @@ Every decision on this platform is a safety decision.
 - ⌨️ **Escape key** — global keyboard shortcut triggers emergency exit
 - 👤 **Survivors never create accounts** — all public routes work without login
 - 🔐 **Row Level Security** enforced at the database level — conductors see only their zone's cases
-- 🤖 **AI output is session-only** — risk briefs and voice conversations are never stored
-- 🎙️ **No audio recorded** — Sauti voice sessions are real-time only, no recordings saved
+- 🤖 **AI output is session-only** — risk briefs are never stored
+- 🎙️ **No audio recorded** — voice input is transcribed in real-time, no recordings saved
 - 📍 **Zone-level display only** — exact safe house addresses never surface in the UI
 - 🗑️ **Minimal data collection** — only what is necessary for the referral
 - ⏱️ **Idle timeout** — auto-clear session after inactivity for logged-in users
 - 🔍 **AI moderation** — automatic PII detection and content safety screening on story submissions
+- 🔑 **Multi-auth Gemini** — supports API key, Vertex AI (service account), or ADK agent
 
 ---
 
@@ -470,22 +531,27 @@ Every decision on this platform is a safety decision.
 ### Prerequisites
 
 - Node.js 18+ or Bun
-- Supabase project (auto-provisioned via Lovable Cloud)
-- Google AI Studio API key (for Gemini Live / Sauti)
+- Firebase project (for Hosting, Firestore, Auth, Cloud Functions)
+- Google AI Studio API key (for Gemini)
 
 ### Environment Variables
 
 ```bash
-# Auto-provisioned by Lovable Cloud
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_PUBLISHABLE_KEY=your_supabase_anon_key
-VITE_SUPABASE_PROJECT_ID=your_project_id
+# Firebase (auto-provisioned via Firebase Console)
+VITE_FIREBASE_API_KEY=your_firebase_api_key
+VITE_FIREBASE_PROJECT_ID=your_firebase_project_id
+VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
 
-# Edge function secrets (set via Lovable Cloud)
-LOVABLE_API_KEY=auto_provisioned          # Lovable AI Gateway access
-GOOGLE_AI_STUDIO_API_KEY=your_key         # For Gemini Live (Sauti)
-GOOGLE_CLOUD_PROJECT_ID=your_project      # For Vertex AI fallback
-GOOGLE_CLOUD_LOCATION=us-central1         # Vertex AI region
+# Google Gemini API
+GOOGLE_AI_STUDIO_API_KEY=your_key         # For Gemini
+
+# GCP Cloud Run (optional - for ADK agent)
+VITE_GCP_FUNCTION_URL=https://hadithi-gateway-xxxx-uc.a.run.app
+
+# OpenFN integration
 OPENFN_WEBHOOK_URL=your_webhook           # OpenFN integration
 ```
 
@@ -505,18 +571,33 @@ npm run dev
 
 ### Deploy
 
-The frontend is auto-deployed via [Lovable](https://lovable.dev). Edge functions deploy automatically when pushed to the connected GitHub repository.
+The frontend is deployed via [Firebase Hosting](https://firebase.google.com/docs/hosting). Cloud Functions deploy automatically via Firebase CLI.
 
-For the Sauti ADK Agent (Cloud Run):
+#### Option 1: Firebase Hosting + Cloud Functions
 
 ```bash
-cd sauti-agent
+# Install Firebase CLI
+npm install -g firebase-tools
+
+# Login
+firebase login
+
+# Deploy hosting + functions
+firebase deploy
+```
+
+#### Option 2: GCP Cloud Run (Hadithi Agent)
+
+```bash
+cd gcp-functions/sauti-session
 gcloud run deploy sauti-agent \
   --source . \
   --region us-central1 \
   --allow-unauthenticated \
   --set-env-vars GOOGLE_CLOUD_PROJECT_ID=njiapanda-safe-space
 ```
+
+For detailed GCP deployment instructions, see [GCP_DEPLOY.md](GCP_DEPLOY.md).
 
 ---
 
@@ -563,17 +644,17 @@ Njiapanda is designed to meet the [DPG Standard](https://digitalpublicgoods.net/
 
 | Route | Description | Access |
 |---|---|---|
-| `/` | Home — hero, 7 quick actions, trust banner | 🌍 Public |
-| `/sauti` | **Sauti** — real-time AI voice companion (Gemini Live) | 🌍 Public |
+| `/` | Home — hero, quick actions, trust banner | 🌍 Public |
 | `/hadithi` | **Hadithi** — AI storytelling (Read, Share chat, Generate illustrated) | 🌍 Public |
+| `/share` | Share Your Story — text or voice submission, AI moderated | 🌍 Anonymous |
 | `/signal` | Quiet help signal — anonymous, 3 fields only | 🌍 Anonymous |
-| `/share` | Share a story — text + voice, AI moderated | 🌍 Anonymous |
 | `/safety` | Interactive 6-step safety plan checklist (works offline) | 🌍 Public |
 | `/resources` | Verified resource directory — Leaflet map + text fallback | 🌍 Public |
 | `/helpline` | Emergency helplines — tap-to-call | 🌍 Public |
 | `/contribute` | Contributions — Stripe / M-Pesa / PayPal | 🌍 Public |
 | `/why` | Why Njiapanda — the personal narrative | 🌍 Public |
 | `/join` | Join the network — conductors, orgs, integrations | 🌍 Public |
+| `/login` | Conductor login | 🔒 |
 | `/dashboard` | Conductor dashboard — zone-filtered cases, AI briefs | 🔒 Conductor |
 | `/admin` | Admin portal — 12 tabs of platform management | 🔒 Admin |
 | `/architecture` | System architecture diagram (exportable as PNG) | 🌍 Public |
@@ -587,7 +668,7 @@ Njiapanda is designed to meet the [DPG Standard](https://digitalpublicgoods.net/
 
 The pilot tests whether a hybrid community + digital support system can:
 - Help survivors recognise abuse earlier
-- Provide clear pathways to support via AI voice companion
+- Provide clear pathways to support via AI storytelling
 - Enable fast, discreet connection to help
 - Coordinate existing resources effectively
 
@@ -614,7 +695,7 @@ npm run dev
 - Update resource directory with local verified organisations
 - Update zone names to match your geography
 - Adjust mobile money integration for your local provider
-- Update Sauti system prompts for local language
+- Update Hadithi system prompts for local language
 
 ---
 
@@ -627,9 +708,9 @@ Contributions welcome — especially from people with lived experience, GBV prac
 | 🐛 Bug report | Open an issue with label `bug` |
 | 💡 Feature idea | Open an issue with label `enhancement` |
 | 🌍 Localisation | Open a PR with translated story content |
-| 🏥 Add an organisation | Submit via [/join](https://njiapanda-safetyapp.lovable.app/join) |
-| 🤝 Become a conductor | Apply via [/join](https://njiapanda-safetyapp.lovable.app/join) |
-| 🔌 System integration | Book a call via [/join](https://njiapanda-safetyapp.lovable.app/join) |
+| 🏥 Add an organisation | Submit via [/join](https://njiapanda-v2.web.app/join) |
+| 🤝 Become a conductor | Apply via [/join](https://njiapanda-v2.web.app/join) |
+| 🔌 System integration | Book a call via [/join](https://njiapanda-v2.web.app/join) |
 
 Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a PR.
 All contributors must agree to our [Code of Conduct](CODE_OF_CONDUCT.md).
@@ -638,10 +719,47 @@ All contributors must agree to our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Acknowledgements
 
-Built on International Women's Day, 8 March 2026, during the Lovable [#SheBuilds](https://lovable.dev) hackathon.
-Enhanced for the Google Gemini Live Agent Challenge with real-time multimodal voice AI, AI-generated illustrated storytelling, and chat-style survivor support.
+Built on International Women's Day, 8 March 2026, during the Google Gemini Live Agent Challenge.
+Enhanced for the Google Gemini Live Agent Challenge with multimodal AI storytelling, AI-generated illustrated narratives, and chat-style survivor support.
 
 Thanks to the organisations already doing this work in Kenya every day — FIDA Kenya, COVAW, Gender Violence Recovery Centre, and every community health worker, social worker, and trusted neighbour who has ever opened their door.
+
+---
+
+## Gemini Live Agent Challenge — Judging Criteria Compliance
+
+### Innovation & Multimodal User Experience (40%)
+
+| Criterion | Evidence |
+|---|---|
+| **Beyond Text Factor** | Hadithi breaks the text box paradigm — generates interleaved text + AI watercolour illustrations in a single SSE stream. |
+| **Natural, Immersive Interaction** | Hadithi streams content progressively as it's generated. |
+| **Agent "See, Hear, Speak"** | Gemini multimodal models process text, images, and audio inputs for storytelling. |
+| **Category Execution** | Hadithi weaves text + images seamlessly. Stories arrive as cohesive narrative with illustrations appearing at emotional peaks. |
+
+### Technical Implementation & Agent Architecture (30%)
+
+| Criterion | Evidence |
+|---|---|
+| **Google Cloud Native** | Backend on Cloud Run, Vertex AI for Gemini API, Firebase Hosting + Firestore. All edge functions use Firebase Cloud Functions calling Gemini API directly. |
+| **System Design** | Agent logic handles errors gracefully. Story generation pipeline coordinates text + image calls. Voice agent manages WebSocket connections with reconnection logic. |
+| **Robustness** | System prompts for trauma-informed responses. Content moderation on all user inputs. Error handling with graceful fallbacks. |
+
+### Demo & Presentation (30%)
+
+| Criterion | Evidence |
+|---|---|
+| **The Story** | Demo video clearly defines the problem (GBV survivors can't access help at recognition) and presents the solution (multimodal storytelling + community network). |
+| **The Proof** | Interactive architecture diagram at `/architecture` with PNG export. Code proof in `sauti-agent/` showing Vertex AI integration. GCP deployment proof in GCP_DEPLOY.md. |
+| **The Live Factor** | Demo video shows actual software working — streaming story generation, not mockups. |
+
+### Optional Bonus Contributions
+
+| Bonus | Evidence |
+|---|---|
+| **Content Creation** | Dev.to article documenting build process with #GeminiLiveAgentChallenge hashtag |
+| **Automated Deployment** | Dockerfile for Cloud Run, Firebase Hosting + Cloud Functions auto-deploy |
+| **GDG Membership** | GDG Nairobi community member |
 
 ---
 
@@ -654,6 +772,6 @@ See [LICENSE](LICENSE) for details.
 
 **Njiapanda is a pilot. The network grows one conductor, one organisation, one conversation at a time.**
 
-[🌍 njiapanda-safetyapp.lovable.app](https://njiapanda-safetyapp.lovable.app)
+[🌍 njiapanda-v2.web.app](https://njiapanda-v2.web.app)
 
 *Built with purpose · Open source · Powered by Google Gemini · Made in Kenya*
