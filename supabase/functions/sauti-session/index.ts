@@ -54,6 +54,40 @@ serve(async (req) => {
   try {
     const { language = "sw", zone } = await req.json().catch(() => ({ language: "sw" }));
 
+    // Opt-in: route to ADK Cloud Run backend if configured
+    const adkUrl = Deno.env.get("SAUTI_ADK_URL");
+    if (adkUrl) {
+      const adkToken = Deno.env.get("SAUTI_ADK_TOKEN");
+      const adkHeaders: Record<string, string> = { "Content-Type": "application/json" };
+      if (adkToken) adkHeaders["Authorization"] = `Bearer ${adkToken}`;
+
+      const adkResponse = await fetch(adkUrl, {
+        method: "POST",
+        headers: adkHeaders,
+        body: JSON.stringify({ language, zone: zone || "unspecified" }),
+      });
+
+      if (!adkResponse.ok) {
+        const errText = await adkResponse.text().catch(() => "Unknown");
+        throw new Error(`ADK service error: ${adkResponse.status} — ${errText}`);
+      }
+
+      const adkData = await adkResponse.json();
+      return new Response(
+        JSON.stringify({
+          wsUrl: adkData.wsUrl,
+          accessToken: adkData.accessToken,
+          sessionId: adkData.sessionId,
+          model: adkData.model,
+          language,
+          zone: zone || "unspecified",
+          expiresAt: adkData.expiresAt || Date.now() + 5 * 60 * 1000,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // Fallback: direct Vertex AI connection
     const serviceAccountKey = Deno.env.get("VERTEX_AI_SERVICE_ACCOUNT_KEY");
     if (!serviceAccountKey) throw new Error("VERTEX_AI_SERVICE_ACCOUNT_KEY not configured");
 
