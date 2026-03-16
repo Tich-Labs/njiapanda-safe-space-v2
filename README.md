@@ -261,7 +261,7 @@ Admin Login ──▶ Admin Portal
 | **AI Moderation** | [Google Gemini](https://ai.google.dev) via Lovable AI Gateway | Content safety screening for story submissions |
 | **AI Risk Assessment** | [Google Gemini](https://ai.google.dev) via Lovable AI Gateway | Structured risk briefs for conductors (tool calling) |
 | **AI Transcription** | [Google Gemini](https://ai.google.dev) via Lovable AI Gateway | Voice-to-text for story submissions |
-| **AI Storytelling** | [Google Gemini / ADK](https://ai.google.dev) | Hadithi awareness story generation with images |
+| **AI Storytelling** | [Google Gemini 2.5 Flash](https://ai.google.dev) via Lovable AI Gateway | Hadithi awareness story generation with SSE streaming |
 | Frontend + Build | [Lovable.ai](https://lovable.dev) + React + Vite + Tailwind | Mobile-first, trauma-informed UI |
 | Database + Auth | [Supabase](https://supabase.com) (via Lovable Cloud) | Postgres, RLS by role and zone, Realtime |
 | Backend Functions | Supabase Edge Functions (Deno) | 7 serverless functions for AI, payments, notifications |
@@ -270,16 +270,18 @@ Admin Login ──▶ Admin Portal
 | Payments | Stripe + M-Pesa + PayPal | M-Pesa from day one — built for Kenya |
 | SMS (planned) | [Africa's Talking](https://africastalking.com) | Low-data and feature phone access |
 
-### Google Cloud Services Used
+### Google Cloud / Gemini Models Used
 
-| Service | Usage |
-|---|---|
-| **Gemini 2.0 Flash Live API** | Sauti real-time voice agent (WebSocket, BidiGenerateContent) |
-| **Gemini 2.5 Flash** | Audio transcription for voice stories |
-| **Gemini 2.5 Flash Lite** | Story content moderation |
-| **Gemini 3 Flash Preview** | AI risk assessment briefs for conductors |
-| **Google AI Studio** | API key authentication for Gemini models |
-| **Vertex AI** (fallback) | Alternative auth path via service account |
+| Service | Model | Usage |
+|---|---|---|
+| **Gemini 2.0 Flash Live API** | `gemini-2.0-flash-live-001` | Sauti real-time voice agent (WebSocket, BidiGenerateContent) |
+| **Gemini 2.5 Flash** | `google/gemini-2.5-flash` | Hadithi awareness storytelling (SSE streaming) |
+| **Gemini 2.5 Flash** | `google/gemini-2.5-flash` | Audio transcription for voice stories |
+| **Gemini 2.5 Flash Lite** | `google/gemini-2.5-flash-lite` | Story content moderation |
+| **Gemini 3 Flash Preview** | `google/gemini-3-flash-preview` | AI risk assessment briefs for conductors |
+| **Google AI Studio** | — | API key authentication for Gemini Live |
+| **Lovable AI Gateway** | — | Proxied access to Gemini models for edge functions |
+| **Vertex AI** (fallback) | — | Alternative auth path via service account |
 
 ---
 
@@ -289,7 +291,7 @@ Admin Login ──▶ Admin Portal
 |---|---|---|
 | `sauti-session` | Provisions WebSocket credentials for Gemini Live voice sessions | Gemini 2.0 Flash Live |
 | `sauti-complete` | Post-session processing and signal creation | — |
-| `hadithi-stream` | SSE proxy to Hadithi story generation agent | Gemini (via ADK) |
+| `hadithi-stream` | SSE streaming awareness story generation | Gemini 2.5 Flash (Lovable AI Gateway) |
 | `transcribe-audio` | Voice recording → text transcription | Gemini 2.5 Flash |
 | `moderate-story` | AI content safety screening for submissions | Gemini 2.5 Flash Lite |
 | `ai-brief` | Structured risk assessment for conductors | Gemini 3 Flash Preview |
