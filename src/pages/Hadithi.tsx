@@ -115,21 +115,26 @@ const Hadithi = () => {
 
   // Handle share
   const handleShareStory = async () => {
-    if (!shareText.trim() || !shareAbuseType || sharing) return;
+    // Collect full story from all user messages in chat
+    const allUserText = chatMessages
+      .filter(m => m.role === "user")
+      .map(m => m.content)
+      .join("\n\n");
+    const fullText = allUserText || shareText.trim();
+    if (!fullText || !shareAbuseType || sharing) return;
     setSharing(true);
     try {
       await supabase.from("stories").insert({
-        title: shareText.split(".")[0].slice(0, 60) || "Anonymous",
-        text: shareText.trim(),
+        title: fullText.split(".")[0].slice(0, 60) || "Anonymous",
+        text: fullText,
         abuse_type: shareAbuseType || "other",
         language: "en",
         source: "user_submission",
         status: "pending",
-        message: shareText.trim(),
+        message: fullText,
       });
       setShareSubmitted(true);
       setShareText("");
-      setShareAbuseType("");
       setChatMessages([]);
     } catch (err) {
       console.error(err);
@@ -142,22 +147,20 @@ const Hadithi = () => {
   const askForMoreContext = async (text: string) => {
     if (!text.trim() || !shareAbuseType) return;
     
-    // Add user message to chat
-    const userMsg = { role: "user" as const, content: text };
-    const updatedHistory = [...chatMessages, userMsg];
-    setChatMessages(updatedHistory);
+    const userMsg = { role: "user" as const, content: text.trim() };
+    setChatMessages(prev => [...prev, userMsg]);
     setAiLoading(true);
     
     try {
+      const allMessages = [...chatMessages, userMsg];
       const { data, error } = await supabase.functions.invoke("story-deepen", {
-        body: { story: text, abuseType: shareAbuseType, history: chatMessages },
+        body: { story: text, abuseType: shareAbuseType, history: allMessages },
       });
       if (error || !data?.reply) {
         toast.error("Could not get follow-up. You can still submit your story.");
         return;
       }
       setChatMessages(prev => [...prev, { role: "assistant" as const, content: data.reply }]);
-      // Scroll to bottom
       setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     } catch {
       toast.error("Could not get follow-up. You can still submit your story.");
@@ -168,9 +171,9 @@ const Hadithi = () => {
 
   // Handle audio transcription result
   const handleAudioTranscript = (text: string) => {
-    setShareText(prev => prev ? prev + "\n\n" + text : text);
+    setChatMessages(prev => [...prev, { role: "user" as const, content: text }]);
     setShareInputMode("text");
-    toast.success("Audio transcribed! Review your story below.");
+    toast.success("Audio transcribed and added to your story!");
   };
 
   // Handle AI generation
@@ -364,125 +367,170 @@ const Hadithi = () => {
           </div>
         )}
 
-        {/* SHARE TAB */}
+        {/* SHARE TAB — ChatGPT-like layout */}
         {activeTab === "share" && (
-          <div className="p-4 space-y-4 max-w-lg mx-auto">
-            <p className="text-white/50 text-sm text-center">
-              Share anonymously. Only the text you submit will be stored. No account needed.
-            </p>
-
-            <select
-              value={shareAbuseType}
-              onChange={e => setShareAbuseType(e.target.value)}
-              className="w-full bg-[#0F3D34] border border-white/20 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#C4871A]/50"
-              style={{ backgroundColor: "#0F3D34", color: "white" }}
-            >
-              <option value="" style={{ backgroundColor: "#0F3D34", color: "white" }}>Type of abuse (required)</option>
-              {abuseTypes.map(t => (
-                <option key={t} value={t} style={{ backgroundColor: "#0F3D34", color: "white" }}>{t}</option>
-              ))}
-            </select>
-
-            {/* Input mode toggle */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShareInputMode("text")}
-                className={`flex-1 flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm transition-colors ${
-                  shareInputMode === "text"
-                    ? "bg-[#C4871A] text-[#091F1A]"
-                    : "bg-white/10 text-white/60 hover:bg-white/15"
-                }`}
-              >
-                <Type className="h-4 w-4" />
-                Type it
-              </button>
-              <button
-                onClick={() => setShareInputMode("audio")}
-                className={`flex-1 flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-sm transition-colors ${
-                  shareInputMode === "audio"
-                    ? "bg-[#C4871A] text-[#091F1A]"
-                    : "bg-white/10 text-white/60 hover:bg-white/15"
-                }`}
-              >
-                <Mic className="h-4 w-4" />
-                Record it
-              </button>
-            </div>
-
-            {/* Audio recorder */}
-            {shareInputMode === "audio" && (
-              <AudioRecorder onTranscript={handleAudioTranscript} />
-            )}
-
-            {/* Text input (always visible when in text mode, or after audio transcription) */}
-            {(shareInputMode === "text" || shareText) && (
-              <textarea
-                value={shareText}
-                onChange={e => setShareText(e.target.value)}
-                placeholder="Share your experience. You can use any name or no name at all."
-                className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white/80 text-sm resize-none h-48 focus:outline-none focus:border-[#C4871A]/50 placeholder-white/20"
-              />
-            )}
-
-            {/* Chat-style conversation thread */}
-            {chatMessages.length > 0 && (
-              <div className="space-y-3 max-h-64 overflow-y-auto rounded-xl border border-white/10 bg-white/[0.02] p-3">
-                {chatMessages.map((msg, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`rounded-xl px-4 py-3 text-sm leading-relaxed ${
-                      msg.role === "user"
-                        ? "bg-white/10 text-white/70 ml-8"
-                        : "bg-[#C4871A]/10 border border-[#C4871A]/30 text-white/70 mr-8"
-                    }`}
-                  >
-                    <span className="block text-[10px] uppercase tracking-wider text-white/30 mb-1">
-                      {msg.role === "user" ? "You" : "Hadithi"}
-                    </span>
-                    {msg.content}
-                  </motion.div>
-                ))}
-                {aiLoading && (
-                  <div className="flex items-center gap-2 py-2 mr-8">
-                    <Loader2 className="h-4 w-4 animate-spin text-[#C4871A]" />
-                    <span className="text-sm text-white/50">Thinking...</span>
-                  </div>
-                )}
-                <div ref={chatEndRef} />
-              </div>
-            )}
-
-            {/* Action buttons */}
-            <div className="space-y-2">
-              {/* "Tell me more" — asks AI for follow-up before submitting */}
-              {shareText.trim() && shareAbuseType && !aiLoading && (
-                <button
-                  onClick={() => askForMoreContext(shareText)}
-                  className="w-full bg-white/10 text-white/70 font-medium rounded-xl py-3 text-sm hover:bg-white/15 transition-colors"
+          <div className="flex flex-col max-w-lg mx-auto" style={{ height: "calc(100vh - 160px)" }}>
+            {/* Top: abuse type selector (only shown if not yet selected) */}
+            {!shareAbuseType ? (
+              <div className="p-4 space-y-4 flex-1 flex flex-col items-center justify-center">
+                <p className="text-white/50 text-sm text-center">
+                  Share anonymously. Only the text you submit will be stored.
+                </p>
+                <select
+                  value={shareAbuseType}
+                  onChange={e => setShareAbuseType(e.target.value)}
+                  className="w-full bg-[#0F3D34] border border-white/20 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#C4871A]/50"
+                  style={{ backgroundColor: "#0F3D34", color: "white" }}
                 >
-                  ✨ Help me tell more of my story
-                </button>
-              )}
+                  <option value="" style={{ backgroundColor: "#0F3D34", color: "white" }}>Select type of abuse to begin</option>
+                  {abuseTypes.map(t => (
+                    <option key={t} value={t} style={{ backgroundColor: "#0F3D34", color: "white" }}>{t}</option>
+                  ))}
+                </select>
+              </div>
+            ) : (
+              <>
+                {/* Abuse type badge + change */}
+                <div className="flex items-center justify-between px-4 py-2 border-b border-white/10">
+                  <span className="text-xs text-white/40">
+                    Topic: <span className="text-[#C4871A]">{shareAbuseType}</span>
+                  </span>
+                  <button
+                    onClick={() => { setShareAbuseType(""); setChatMessages([]); setShareText(""); }}
+                    className="text-xs text-white/30 hover:text-white/60"
+                  >
+                    Change
+                  </button>
+                </div>
 
-              <button
-                onClick={handleShareStory}
-                disabled={!shareText.trim() || !shareAbuseType || sharing}
-                className="w-full bg-[#C4871A] text-[#091F1A] font-semibold rounded-xl py-3 disabled:opacity-40 transition-all active:scale-95"
-              >
-                {sharing ? "Submitting..." : "Submit anonymously"}
-              </button>
-            </div>
+                {/* Conversation area — scrollable */}
+                <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+                  {chatMessages.length === 0 && !shareText && (
+                    <div className="flex flex-col items-center justify-center h-full text-center">
+                      <PenLine className="h-8 w-8 text-white/20 mb-3" />
+                      <p className="text-white/40 text-sm">
+                        Tell us what happened. Type or record below.
+                      </p>
+                      <p className="text-white/25 text-xs mt-1">
+                        AI can help you expand your story after you share.
+                      </p>
+                    </div>
+                  )}
 
-            {shareSubmitted && (
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-center text-sm text-green-400/70 italic"
-              >
-                Thank you. Your story has been received and will be reviewed before publishing.
-              </motion.p>
+                  {chatMessages.map((msg, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`rounded-2xl px-4 py-3 text-sm leading-relaxed max-w-[85%] ${
+                        msg.role === "user"
+                          ? "bg-white/10 text-white/80 ml-auto"
+                          : "bg-[#C4871A]/10 border border-[#C4871A]/20 text-white/70 mr-auto"
+                      }`}
+                    >
+                      {msg.role === "assistant" && (
+                        <span className="block text-[10px] uppercase tracking-wider text-[#C4871A]/60 mb-1">Hadithi</span>
+                      )}
+                      {msg.content}
+                    </motion.div>
+                  ))}
+
+                  {aiLoading && (
+                    <div className="flex items-center gap-2 py-2">
+                      <Loader2 className="h-4 w-4 animate-spin text-[#C4871A]" />
+                      <span className="text-sm text-white/50">Thinking…</span>
+                    </div>
+                  )}
+                  <div ref={chatEndRef} />
+                </div>
+
+                {/* Success message */}
+                {shareSubmitted && (
+                  <motion.p
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="text-center text-sm text-green-400/70 italic px-4 py-2"
+                  >
+                    Thank you. Your story has been received and will be reviewed before publishing. 💚
+                  </motion.p>
+                )}
+
+                {/* Bottom input area — pinned */}
+                <div className="border-t border-white/10 px-4 py-3 space-y-2" style={{ backgroundColor: "#091F1A" }}>
+                  {/* Input mode toggle */}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setShareInputMode("text")}
+                      className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs transition-colors ${
+                        shareInputMode === "text"
+                          ? "bg-[#C4871A] text-[#091F1A]"
+                          : "bg-white/10 text-white/50 hover:bg-white/15"
+                      }`}
+                    >
+                      <Type className="h-3 w-3" />
+                      Type
+                    </button>
+                    <button
+                      onClick={() => setShareInputMode("audio")}
+                      className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs transition-colors ${
+                        shareInputMode === "audio"
+                          ? "bg-[#C4871A] text-[#091F1A]"
+                          : "bg-white/10 text-white/50 hover:bg-white/15"
+                      }`}
+                    >
+                      <Mic className="h-3 w-3" />
+                      Record
+                    </button>
+                    <div className="flex-1" />
+                    {/* Submit button */}
+                    <button
+                      onClick={handleShareStory}
+                      disabled={!shareText.trim() || sharing}
+                      className="bg-[#C4871A] text-[#091F1A] font-semibold rounded-lg px-4 py-1.5 text-xs disabled:opacity-40 transition-all active:scale-95"
+                    >
+                      {sharing ? "…" : "Submit"}
+                    </button>
+                  </div>
+
+                  {/* Audio recorder */}
+                  {shareInputMode === "audio" && (
+                    <AudioRecorder onTranscript={handleAudioTranscript} />
+                  )}
+
+                  {/* Text input */}
+                  {shareInputMode === "text" && (
+                    <div className="flex gap-2">
+                      <textarea
+                        value={shareText}
+                        onChange={e => setShareText(e.target.value)}
+                        onKeyDown={e => {
+                          if (e.key === "Enter" && !e.shiftKey && shareText.trim()) {
+                            e.preventDefault();
+                            askForMoreContext(shareText);
+                            setShareText("");
+                          }
+                        }}
+                        placeholder="Tell us what happened…"
+                        rows={2}
+                        className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white/80 text-sm resize-none focus:outline-none focus:border-[#C4871A]/50 placeholder-white/20"
+                      />
+                      <button
+                        onClick={() => {
+                          if (shareText.trim()) {
+                            askForMoreContext(shareText);
+                            setShareText("");
+                          }
+                        }}
+                        disabled={!shareText.trim() || aiLoading}
+                        className="self-end bg-white/10 hover:bg-white/15 text-white/60 rounded-xl p-3 disabled:opacity-30 transition-colors"
+                        aria-label="Send message"
+                      >
+                        <Sparkles className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
             )}
           </div>
         )}
