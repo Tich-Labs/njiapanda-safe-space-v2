@@ -192,12 +192,34 @@ IMPORTANT RULES:
             }
 
             const data = await imageResponse.json();
-            // Check for inline image in the response
-            const content = data?.choices?.[0]?.message?.content;
-
-            // The Lovable AI gateway may return images as markdown or base64
-            // Check for base64 image in parts
-            const parts = data?.choices?.[0]?.message?.parts;
+            console.log("Image API response keys:", JSON.stringify(Object.keys(data)));
+            
+            const choice = data?.choices?.[0];
+            if (!choice) {
+              console.error("No choices in image response");
+              return null;
+            }
+            
+            const message = choice.message;
+            console.log("Message keys:", JSON.stringify(Object.keys(message || {})));
+            
+            // Check for content array (multimodal response format)
+            if (Array.isArray(message?.content)) {
+              for (const part of message.content) {
+                if (part.type === "image_url" && part.image_url?.url) {
+                  return part.image_url.url;
+                }
+                if (part.type === "image" && part.source?.data) {
+                  return `data:${part.source.media_type || "image/png"};base64,${part.source.data}`;
+                }
+                if (part.inline_data?.mime_type?.includes("image")) {
+                  return `data:${part.inline_data.mime_type};base64,${part.inline_data.data}`;
+                }
+              }
+            }
+            
+            // Check for parts (Gemini native format)
+            const parts = message?.parts;
             if (parts) {
               for (const part of parts) {
                 if (part.inline_data?.mime_type?.includes("image")) {
@@ -206,17 +228,21 @@ IMPORTANT RULES:
               }
             }
 
-            // Check if content contains a markdown image
+            // Check string content for base64 or markdown images
+            const content = typeof message?.content === "string" ? message.content : null;
             if (content) {
+              // Markdown image with data URI
               const mdMatch = content.match(/!\[.*?\]\((data:image\/[^)]+)\)/);
               if (mdMatch) return mdMatch[1];
 
-              // Check for base64 data URI in content
+              // Raw data URI
               const b64Match = content.match(/(data:image\/[a-z]+;base64,[A-Za-z0-9+/=]+)/);
               if (b64Match) return b64Match[1];
+              
+              console.log("Content preview (first 200 chars):", content.substring(0, 200));
             }
 
-            console.error("No image found in response");
+            console.error("No image found in response. Full response:", JSON.stringify(data).substring(0, 500));
             return null;
           } catch (e) {
             console.error("Image error:", e);
