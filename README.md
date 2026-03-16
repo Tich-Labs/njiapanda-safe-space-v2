@@ -289,7 +289,7 @@ Admin Login ──▶ Admin Portal
 |---|---|---|
 | `sauti-session` | Provisions WebSocket credentials for Gemini Live voice sessions | Gemini 2.0 Flash Live |
 | `sauti-complete` | Post-session processing and signal creation | — |
-| `hadithi-stream` | SSE proxy to Hadithi story generation agent | Gemini (via ADK) |
+| `hadithi-stream` | SSE streaming awareness story generation | Gemini 2.5 Flash (Lovable AI Gateway) |
 | `transcribe-audio` | Voice recording → text transcription | Gemini 2.5 Flash |
 | `moderate-story` | AI content safety screening for submissions | Gemini 2.5 Flash Lite |
 | `ai-brief` | Structured risk assessment for conductors | Gemini 3 Flash Preview |
