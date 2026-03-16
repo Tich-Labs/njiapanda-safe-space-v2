@@ -2,8 +2,44 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+// Diversity pools for story variety
+const NAMES_FEMALE = ["Wanjiku", "Akinyi", "Fatuma", "Njeri", "Atieno", "Rehema", "Zawadi", "Nyambura", "Halima", "Zuri", "Makena", "Nyokabi", "Sifa", "Baraka", "Neema"];
+const NAMES_MALE = ["Otieno", "Kamau", "Juma", "Ochieng", "Mwangi", "Hassan", "Kipchoge", "Barasa", "Mutua", "Ndung'u", "Abdi", "Wekesa", "Karanja", "Ruto", "Abubakar"];
+const LOCATIONS = ["Kisumu", "Mombasa", "Nakuru", "Nairobi's Eastlands", "Eldoret", "Malindi", "Nyeri", "Machakos", "Kilifi", "Garissa", "Thika", "Kitale", "Kakamega", "Lamu", "Nanyuki"];
+const RELATIONSHIPS = ["partner", "husband", "boyfriend", "uncle", "employer", "in-law", "neighbour", "colleague", "elder", "family friend"];
+const PERSPECTIVES = ["first-person", "third-person"];
+const SETTINGS = ["rural village", "urban apartment", "market stall", "school compound", "small business", "church community", "hospital ward", "fishing village", "tea plantation", "matatu route"];
+
+const pick = <T,>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
+
+const ABUSE_TYPE_MAP: Record<string, string> = {
+  emotional: "emotional abuse and psychological manipulation",
+  economic: "economic abuse and financial control",
+  physical: "physical violence",
+  sexual: "sexual coercion",
+  isolation: "social isolation and control",
+  digital: "digital surveillance and technology-facilitated abuse",
+  coercive: "coercive control patterns",
+  stalking: "stalking and harassment",
+  spiritual: "spiritual abuse and religious manipulation",
+  reproductive: "reproductive coercion",
+  workplace: "workplace harassment and abuse of power",
+  elder: "elder abuse",
+};
+
+function detectAbuseType(prompt: string): string {
+  const lower = prompt.toLowerCase();
+  for (const [key, value] of Object.entries(ABUSE_TYPE_MAP)) {
+    if (lower.includes(key)) return value;
+  }
+  // Random if no match
+  const types = Object.values(ABUSE_TYPE_MAP);
+  return types[Math.floor(Math.random() * types.length)];
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -24,12 +60,42 @@ serve(async (req) => {
     const includeImages = format === "image_text" || format === "multimedia";
     const includeAudio = format === "multimedia";
 
-    const systemPrompt = includeImages
-      ? `You are an awareness storyteller about gender-based violence in Kenya. Write a short first-person story (6-8 paragraphs) about a fictional character experiencing abuse — economic control, emotional control, or physical abuse. Use Kenyan names and locations. Show slowly how abuse develops. End by gently naming what happened. Every two paragraphs, on its own line write: [IMAGE: brief description of a soft watercolour illustration showing the emotional mood of that moment]. Respond with the story only.`
-      : `You are an awareness storyteller about gender-based violence in Kenya. Write a short first-person story (6-8 paragraphs) about a fictional character experiencing abuse — economic control, emotional control, or physical abuse. Use Kenyan names and locations. Show slowly how abuse develops. End by gently naming what happened. Respond with the story only.`;
+    // Generate diverse character details for each story
+    const protagonist = pick(NAMES_FEMALE);
+    const abuser = pick(NAMES_MALE);
+    const location = pick(LOCATIONS);
+    const relationship = pick(RELATIONSHIPS);
+    const perspective = pick(PERSPECTIVES);
+    const setting = pick(SETTINGS);
+    const abuseType = detectAbuseType(prompt);
 
-    const userPrompt = (prompt === "begin" || prompt === "anza")
-      ? (language === "sw" ? "Niandikia hadithi kuhusu udhibiti wa kiuchumi" : "Tell me a story about coercive control in a relationship")
+    const perspectiveInstruction = perspective === "first-person"
+      ? `Write in first person as ${protagonist}.`
+      : `Write in third person about ${protagonist}.`;
+
+    const imageInstruction = includeImages
+      ? ` Every two paragraphs, on its own line write: [IMAGE: brief description of a soft watercolour illustration showing the emotional mood of that moment].`
+      : "";
+
+    const systemPrompt = `You are a trauma-informed awareness storyteller about gender-based violence in East Africa.
+
+IMPORTANT RULES:
+- Use these EXACT character details: protagonist is ${protagonist}, the abuser is ${relationship} named ${abuser}, set in ${location} near a ${setting}.
+- ${perspectiveInstruction}
+- The story must focus on: ${abuseType}.
+- Write 6-8 paragraphs. Show how the abuse develops gradually — the early "good days", then the slow shift.
+- End by gently naming what happened and showing a moment of recognition or small act of courage.
+- Use culturally specific details (food, transport, language, social dynamics).
+- Do NOT always use the same story arc. Vary the ending: sometimes hope, sometimes ambiguity, sometimes a community response.
+- Avoid clinical or medical language. Be gentle and dignified.${imageInstruction}
+- At the very end, add on its own line: "⚠️ This story is fictional and created for awareness purposes only."
+- Respond with the story only.`;
+
+    const isGenericStart = prompt === "begin" || prompt === "anza" || prompt.trim().length < 10;
+    const userPrompt = isGenericStart
+      ? (language === "sw"
+        ? `Niandikia hadithi kuhusu ${abuseType} inayotokea ${location}`
+        : `Tell me a story about ${abuseType} set in ${location}`)
       : prompt;
 
     // Use Google AI Studio API
@@ -42,7 +108,7 @@ serve(async (req) => {
           contents: [{ role: "user", parts: [{ text: userPrompt }] }],
           systemInstruction: { parts: [{ text: systemPrompt }] },
           generationConfig: {
-            temperature: 0.9,
+            temperature: 1.0,
             maxOutputTokens: 8192,
           },
         }),
@@ -61,6 +127,14 @@ serve(async (req) => {
       async start(controller) {
         const encode = (obj: object) =>
           new TextEncoder().encode(`data: ${JSON.stringify(obj)}\n\n`);
+
+        // Send metadata about the generated story so the client can tag it
+        controller.enqueue(encode({
+          type: "meta",
+          abuseType: abuseType,
+          protagonist,
+          location,
+        }));
 
         const reader = geminiResponse.body!.getReader();
         const decoder = new TextDecoder();
@@ -102,7 +176,7 @@ serve(async (req) => {
 
           const imageMatch = trimmed.match(/^\[IMAGE:\s*(.+)\]$/i);
           if (imageMatch && includeImages) {
-            const description = imageMatch[1] + ", soft watercolour style, muted emotional tones, Kenyan context";
+            const description = imageMatch[1] + ", soft watercolour style, muted emotional tones, East African context";
             controller.enqueue(encode({ type: "text", content: " " }));
             
             const imageUrl = await generateImage(description);

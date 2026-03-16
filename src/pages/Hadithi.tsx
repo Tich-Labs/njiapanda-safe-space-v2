@@ -58,8 +58,10 @@ const Hadithi = () => {
   const [generating, setGenerating] = useState(false);
   const [done, setDone] = useState(false);
   const promptRef = useRef("");
+  const storyMetaRef = useRef<{ abuseType?: string; protagonist?: string; location?: string }>({});
 
-  // Fetch stories
+
+  // Fetch stories — prioritize matching abuse type if user recently generated one
   useEffect(() => {
     const fetchStories = async () => {
       setLoading(true);
@@ -68,7 +70,20 @@ const Hadithi = () => {
         .select("*")
         .eq("status", "approved")
         .order("created_at", { ascending: false });
-      setStories(data || []);
+      
+      let sorted = data || [];
+      // If user recently generated a story type, boost matching stories to top
+      const recentType = sessionStorage.getItem("hadithi-last-type");
+      if (recentType && sorted.length > 0) {
+        const matching = sorted.filter(s => 
+          s.abuse_type?.toLowerCase().includes(recentType.toLowerCase()) ||
+          s.tags?.some((t: string) => t.toLowerCase().includes(recentType.toLowerCase()))
+        );
+        const rest = sorted.filter(s => !matching.includes(s));
+        sorted = [...matching, ...rest];
+      }
+      
+      setStories(sorted);
       setLoading(false);
     };
     if (activeTab === "read") fetchStories();
@@ -164,6 +179,16 @@ const Hadithi = () => {
             const event = JSON.parse(jsonStr);
             if (event.type === "done") {
               setDone(true);
+            } else if (event.type === "meta") {
+              storyMetaRef.current = {
+                abuseType: event.abuseType,
+                protagonist: event.protagonist,
+                location: event.location,
+              };
+              // Remember for story prioritization
+              if (event.abuseType) {
+                sessionStorage.setItem("hadithi-last-type", event.abuseType.split(" ")[0]);
+              }
             } else if (event.type === "text" && typeof event.content === "string") {
               setBlocks(prev => [...prev, { id: crypto.randomUUID(), type: "text", content: event.content }]);
             } else if (event.type === "image" && typeof event.url === "string") {
@@ -188,14 +213,16 @@ const Hadithi = () => {
   useEffect(() => {
     if (done && blocks.length > 0 && !generating) {
       const text = blocks.filter(b => b.type === "text").map(b => b.content).join("\n\n");
+      const meta = storyMetaRef.current;
       if (text) {
         supabase.from("stories").insert({
           text,
+          title: meta.protagonist ? `${meta.protagonist}'s Story` : null,
           language: "English",
           status: "approved",
           source: "hadithi_ai",
-          abuse_type: null,
-          tags: ["ai-story", promptRef.current.toLowerCase().split(" ")[0] || "general"],
+          abuse_type: meta.abuseType || null,
+          tags: ["ai-story", ...(meta.abuseType ? [meta.abuseType.split(" ")[0]] : []), promptRef.current.toLowerCase().split(" ")[0] || "general"],
         });
       }
     }
