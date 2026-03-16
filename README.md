@@ -599,6 +599,167 @@ gcloud run deploy sauti-agent \
 
 For detailed GCP deployment instructions, see [GCP_DEPLOY.md](GCP_DEPLOY.md).
 
+## Reproducible Testing Instructions
+
+Judges can test all features of Njiapanda using the live deployment at https://njiapanda-v2.web.app or by running locally. Follow these steps to verify functionality:
+
+### 🟢 Survivor Journey Testing (Anonymous, No Account Required)
+
+1. **Visit the Live Platform**
+   - Open https://njiapanda-v2.web.app in any modern browser
+   - Verify the hero section loads with trust banner and quick actions
+
+2. **Test Hadithi Storytelling Features**
+   - Navigate to `/hadithi` or click "Hadithi (Stories + AI)" 
+   - **Read Stories**: Browse approved stories, use search/filter by abuse type
+   - **Share Your Story (Standalone)**: Go to `/share` directly or via Hadithi
+     - Enter text or record audio (transcribed via Gemini AI)
+     - Select abuse type and language
+     - Submit anonymously - verify success toast appears
+   - **Generate Awareness Stories**: 
+     - Click "Generate" in Hadithi section
+     - Choose text-only or illustrated format
+     - Verify story streams with text and (if illustrated) watercolour images
+     - Check for disclaimer: "This story is fictional and created for awareness purposes only"
+
+3. **Test Quiet Help Signal**
+   - Navigate to `/signal` or click "Quiet Signal" in navigation
+   - Select urgency level (Emergency/Urgent/Information)
+   - Choose resource needed (safe place, legal help, etc.)
+   - Select zone (Nairobi, Mombasa, etc.)
+   - Toggle consent for follow-up
+   - Submit signal - verify confirmation screen appears
+   - Test emergency exit button (instant redirect to weather.com)
+
+4. **Test Safety Planning**
+   - Navigate to `/safety` or click "Safety Plan"
+   - Complete the 6-step interactive checklist:
+     - Identify safe person
+     - Pack emergency bag
+     - Save disguised contacts
+     - Know nearest safe house
+     - Set code word
+     - Clear browser history
+   - Verify progress tracking works
+   - Test offline capability by disabling network (service worker caching)
+
+5. **Test Resource Directory**
+   - Navigate to `/resources` or click "Resources"
+   - Verify Leaflet + OpenStreetMap loads with zone centres
+   - Search/filter by organisation type (Legal Aid, Medical, etc.) and zone
+   - Test low-bandwidth mode toggle
+   - Click organisation cards to view contact details, hours, type
+
+6. **Test Emergency Helplines**
+   - Navigate to `/helpline` or click "Helpline"
+   - Verify one-tap access to Kenya emergency numbers:
+     - GBV Hotline (1195)
+     - Childline Kenya (116)
+     - Kenya Red Cross (1199)
+     - Police Emergency (999)
+     - FIDA Kenya
+   - Test tap-to-call functionality (on mobile devices)
+
+7. **Test Accessibility & Safety Features**
+   - Verify emergency exit button is present on every page
+   - Test Escape key triggers emergency exit globally
+   - Check for skip link (jump to main content)
+   - Verify high contrast toggle in accessibility toolbar
+   - Confirm 48px+ tap targets on mobile view
+   - Test simple language toggle
+
+### 🟡 Conductor Journey Testing (Requires Test Credentials)
+
+*Note: For judging purposes, use these test conductor credentials:*
+- **Email**: `conductor@njiapanda.test`
+- **Password**: `TestConductor123!`
+
+1. **Conductor Login**
+   - Navigate to `/login` or click "Login" → "Conductor Login"
+   - Enter test credentials above
+   - Verify successful login redirects to `/dashboard`
+
+2. **Conductor Dashboard**
+   - Verify zone-filtered interface (conductors see only their assigned zone)
+   - Check for real-time signal alerts (simulate by submitting a signal as survivor)
+   - Accept a test signal to create a case
+   - Verify AI risk brief generation (structured assessment with risk level, abuse types, suggested resources)
+   - Test adding case notes
+   - Verify safe house referral with capacity status
+   - Check zone metrics and active cases overview
+
+### 🔵 Admin Journey Testing (Requires Test Credentials)
+
+*Note: For judging purposes, use these test admin credentials:*
+- **Email**: `admin@njiapanda.test`
+- **Password**: `TestAdmin123!`
+
+1. **Admin Login**
+   - Navigate to `/admin/login` or use conductor login then navigate to admin
+   - Enter test admin credentials above
+   - Verify successful login redirects to admin portal
+
+2. **Admin Portal (12 Tabs)**
+   Test each tab briefly:
+   - **Overview**: Platform metrics and analytics
+   - **Signals**: View all incoming help signals across zones
+   - **Conductors**: Activate/deactivate responders, view zone assignments
+   - **User Roles**: Assign admin/conductor/user roles
+   - **Stories**: Moderation queue - approve/flag/reject story submissions
+   - **Create Story**: CMS for editorial awareness content
+   - **Feedback**: Resolve user reports and bug reports
+   - **Partners**: Review partnership applications
+   - **Resources**: Manage verified organisations (add/edit/remove)
+   - **Safe Houses**: Update capacity status per zone
+   - **Alerts**: Monitor escalation triggers
+   - **Audit Log**: Full action history for accountability
+
+### 🔧 Technical Verification
+
+1. **API Connectivity**
+   - Open browser dev tools → Network tab
+   - Verify Firebase Firestore calls succeed (look for `googleapis.com` requests)
+   - Verify Google Gemini API calls succeed for AI features
+   - Check for proper error handling and fallback behavior
+
+2. **Performance Checks**
+   - Verify PWA functionality works (installable via browser)
+   - Check service worker registration (Application tab in dev tools)
+   - Verify offline functionality for safety plan and core features
+   - Test responsiveness across mobile/tablet/desktop viewports
+
+3. **Security Verification**
+   - Confirm no sensitive data is stored in localStorage or visible in dev tools
+   - Verify emergency exit properly clears session and replaces history
+   - Check that abuse type selections and story content are not logged insecurely
+   - Verify Row Level Security concepts (conductors only see their zone data)
+
+### 📱 Device Compatibility Testing
+
+Test on multiple devices if possible:
+- **Mobile**: iOS Safari, Android Chrome
+- **Tablet**: iPad Chrome/Safari
+- **Desktop**: Chrome, Firefox, Safari, Edge
+
+### Expected Outcomes
+
+All tests should pass with:
+- No JavaScript errors in console
+- Successful form submissions with appropriate feedback
+- AI-generated content appearing within expected timeframes
+- Offline functionality working for designated features
+- Emergency exit functioning immediately on all pages
+- Responsive layout adapting to screen sizes
+- Accessible navigation via keyboard and screen readers
+
+Judges encountering issues should check:
+1. Network connectivity
+2. Browser compatibility (modern browsers recommended)
+3. Console errors for debugging
+4. Service worker status for PWA features
+
+The platform is designed to be resilient with graceful degradation for non-critical features.
+
 ---
 
 ## Why OpenFN & Interoperability
