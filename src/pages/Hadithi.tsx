@@ -411,21 +411,21 @@ const Hadithi = () => {
 
             <div className="flex gap-2">
               {([
-                { id: "text", label: "Text" },
-                { id: "image_text", label: "Images" },
-                { id: "multimedia", label: "Full" },
-              ] as const).map(f => (
+                { id: "text" as const, label: "Text only", desc: "Fast" },
+                { id: "illustrated" as const, label: "Illustrated", desc: "With images" },
+              ]).map(f => (
                 <button
                   key={f.id}
                   onClick={() => setFormat(f.id)}
                   disabled={generating}
-                  className={`flex-1 rounded-lg px-3 py-2 text-sm transition-colors ${
+                  className={`flex-1 rounded-lg px-3 py-2.5 text-sm transition-colors ${
                     format === f.id
                       ? "bg-[#C4871A] text-[#091F1A]"
                       : "bg-white/10 text-white/60 hover:bg-white/15 disabled:opacity-40"
                   }`}
                 >
-                  {f.label}
+                  <span className="block font-medium">{f.label}</span>
+                  <span className="block text-xs opacity-70">{f.desc}</span>
                 </button>
               ))}
             </div>
