@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AccessibilityProvider } from "@/hooks/useAccessibility";
 import { useAuth } from "@/hooks/useAuth";
 import { useIdleTimeout } from "@/hooks/useIdleTimeout";
@@ -43,7 +43,7 @@ function AppInner() {
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/share" element={<ShareStory />} />
-        <Route path="/stories" element={<StoryLibrary />} />
+        <Route path="/stories" element={<Navigate to="/hadithi" replace />} />
         <Route path="/safety" element={<Safety />} />
         <Route path="/resources" element={<Resources />} />
         <Route path="/helpline" element={<Helpline />} />

@@ -2,142 +2,207 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const { prompt, language } = await req.json();
-    if (!prompt) {
-      return new Response(
-        JSON.stringify({ error: "prompt is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    const { prompt, language, format = "multimedia" } = await req.json();
+    const apiKey = Deno.env.get("GOOGLE_AI_STUDIO_API_KEY");
 
-    const apiKey = Deno.env.get("LOVABLE_API_KEY");
     if (!apiKey) {
       return new Response(
-        JSON.stringify({ error: "LOVABLE_API_KEY not configured" }),
+        JSON.stringify({ error: "GOOGLE_AI_STUDIO_API_KEY not set" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const lang = language === "sw" ? "Swahili" : "English";
+    const includeImages = format === "image_text" || format === "multimedia";
+    const includeAudio = format === "multimedia";
 
-    const systemPrompt = `You are Hadithi, a trauma-informed storyteller for Njiapanda — a platform that supports survivors of gender-based violence (GBV) in East Africa.
+    const systemPrompt = includeImages
+      ? `You are an awareness storyteller about gender-based violence in Kenya. Write a short first-person story (6-8 paragraphs) about a fictional character experiencing abuse — economic control, emotional control, or physical abuse. Use Kenyan names and locations. Show slowly how abuse develops. End by gently naming what happened. Every two paragraphs, on its own line write: [IMAGE: brief description of a soft watercolour illustration showing the emotional mood of that moment]. Respond with the story only.`
+      : `You are an awareness storyteller about gender-based violence in Kenya. Write a short first-person story (6-8 paragraphs) about a fictional character experiencing abuse — economic control, emotional control, or physical abuse. Use Kenyan names and locations. Show slowly how abuse develops. End by gently naming what happened. Respond with the story only.`;
 
-Your role is to craft short, powerful fictional awareness stories that help people recognise patterns of abuse such as coercive control, financial abuse, emotional manipulation, physical violence, and digital surveillance.
+    const userPrompt = (prompt === "begin" || prompt === "anza")
+      ? (language === "sw" ? "Niandikia hadithi kuhusu udhibiti wa kiuchumi" : "Tell me a story about coercive control in a relationship")
+      : prompt;
 
-Guidelines:
-- Write in ${lang}
-- Stories should be 3-5 paragraphs, fictional, and powerful
-- Use relatable East African settings, names, and cultural context
-- Show the pattern of abuse clearly so readers can recognise warning signs
-- End with a brief empowering reflection or awareness message
-- Never glorify violence; always centre the survivor's perspective
-- Keep a warm, compassionate, and educational tone
-- If the user asks something unrelated to GBV awareness, gently redirect to awareness storytelling
+    // Use Google AI Studio API
+    const geminiResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ role: "user", parts: [{ text: userPrompt }] }],
+          systemInstruction: { parts: [{ text: systemPrompt }] },
+          generationConfig: {
+            temperature: 0.9,
+            maxOutputTokens: 8192,
+          },
+        }),
+      }
+    );
 
-Format your response as a flowing narrative story. Do not use headers or bullet points.`;
-
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        stream: true,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: prompt },
-        ],
-        max_tokens: 2000,
-        temperature: 0.8,
-      }),
-    });
-
-    if (!response.ok || !response.body) {
-      const errorText = await response.text().catch(() => "Unknown error");
-      console.error("AI gateway error:", response.status, errorText);
+    if (!geminiResponse.ok) {
+      const err = await geminiResponse.text();
       return new Response(
-        JSON.stringify({ error: `AI error: ${response.status}` }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ error: "Gemini API error", detail: err }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Transform OpenAI-compatible SSE stream into our custom SSE format
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    const encoder = new TextEncoder();
-
     const stream = new ReadableStream({
       async start(controller) {
+        const encode = (obj: object) =>
+          new TextEncoder().encode(`data: ${JSON.stringify(obj)}\n\n`);
+
+        const reader = geminiResponse.body!.getReader();
+        const decoder = new TextDecoder();
         let buffer = "";
-        let accumulated = "";
+        let paraBuffer = "";
 
-        try {
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split("\n");
-            buffer = lines.pop() || "";
-
-            for (const line of lines) {
-              if (!line.startsWith("data: ")) continue;
-              const data = line.slice(6).trim();
-              if (data === "[DONE]") continue;
-
-              try {
-                const parsed = JSON.parse(data);
-                const content = parsed.choices?.[0]?.delta?.content;
-                if (content) {
-                  accumulated += content;
-                  // Send text chunks as paragraphs when we hit double newlines
-                  if (accumulated.includes("\n\n")) {
-                    const parts = accumulated.split("\n\n");
-                    // Keep the last partial part in the accumulator
-                    accumulated = parts.pop() || "";
-                    for (const part of parts) {
-                      const trimmed = part.trim();
-                      if (trimmed) {
-                        controller.enqueue(
-                          encoder.encode(`data: ${JSON.stringify({ type: "text", content: trimmed })}\n\n`)
-                        );
-                      }
-                    }
-                  }
-                }
-              } catch {
-                // skip malformed chunks
+        const generateImage = async (description: string): Promise<string | null> => {
+          try {
+            const imageResponse = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  contents: [{ parts: [{ text: `Generate a soft watercolour illustration: ${description}` }] }],
+                  generationConfig: { responseModalities: ["IMAGE", "TEXT"] }
+                }),
+              }
+            );
+            
+            if (imageResponse.ok) {
+              const data = await imageResponse.json();
+              const inlineData = data?.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+              if (inlineData?.data) {
+                return `data:${inlineData.mimeType};base64,${inlineData.data}`;
               }
             }
+            console.error("Image generation failed:", await imageResponse.text());
+            return null;
+          } catch (e) {
+            console.error("Image error:", e);
+            return null;
+          }
+        };
+
+        const emitParagraph = async (text: string) => {
+          const trimmed = text.trim();
+          if (!trimmed) return;
+
+          const imageMatch = trimmed.match(/^\[IMAGE:\s*(.+)\]$/i);
+          if (imageMatch && includeImages) {
+            const description = imageMatch[1] + ", soft watercolour style, muted emotional tones, Kenyan context";
+            controller.enqueue(encode({ type: "text", content: " " }));
+            
+            const imageUrl = await generateImage(description);
+            if (imageUrl) {
+              controller.enqueue(encode({
+                type: "image",
+                url: imageUrl,
+                alt: description,
+              }));
+            }
+            return;
           }
 
-          // Flush remaining text
-          const remaining = accumulated.trim();
-          if (remaining) {
-            controller.enqueue(
-              encoder.encode(`data: ${JSON.stringify({ type: "text", content: remaining })}\n\n`)
+          controller.enqueue(encode({ type: "text", content: trimmed }));
+
+          if (!includeAudio) return;
+
+          try {
+            const ttsResponse = await fetch(
+              `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  contents: [{ role: "user", parts: [{ text: `Read this aloud naturally: ${trimmed}` }] }],
+                  generationConfig: {
+                    responseModalities: ["AUDIO"],
+                    speech_config: {
+                      voice_config: {
+                        prebuilt_voice_config: { voice_name: "Aoede" },
+                      },
+                    },
+                  },
+                }),
+              }
             );
-          }
 
-          // Send done event
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ type: "done" })}\n\n`));
-        } catch (err) {
-          console.error("Stream processing error:", err);
-        } finally {
-          controller.close();
+            if (ttsResponse.ok) {
+              const ttsData = await ttsResponse.json();
+              const audioPart = ttsData?.candidates?.[0]?.content?.parts?.find(
+                (p: any) => p.inlineData?.mimeType?.includes("audio")
+              );
+              if (audioPart?.inlineData) {
+                controller.enqueue(encode({
+                  type: "audio",
+                  data: audioPart.inlineData.data,
+                  mimeType: audioPart.inlineData.mimeType,
+                }));
+              }
+            }
+          } catch {
+            // Audio generation failed silently
+          }
+        };
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+
+          for (const line of lines) {
+            if (!line.startsWith("data: ")) continue;
+            const raw = line.slice(6).trim();
+            if (!raw || raw === "[DONE]") continue;
+
+            try {
+              const parsed = JSON.parse(raw);
+              const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+              if (!text) continue;
+
+              paraBuffer += text;
+
+              while (paraBuffer.includes("\n\n")) {
+                const idx = paraBuffer.indexOf("\n\n");
+                const para = paraBuffer.slice(0, idx).trim();
+                paraBuffer = paraBuffer.slice(idx + 2);
+                if (para) await emitParagraph(para);
+              }
+
+              const singleLines = paraBuffer.split("\n");
+              for (let i = 0; i < singleLines.length - 1; i++) {
+                if (singleLines[i].trim().match(/^\[IMAGE:/i)) {
+                  await emitParagraph(singleLines[i].trim());
+                  singleLines.splice(i, 1);
+                  i--;
+                }
+              }
+              paraBuffer = singleLines.join("\n");
+
+            } catch { /* skip malformed */ }
+          }
         }
+
+        if (paraBuffer.trim()) await emitParagraph(paraBuffer.trim());
+
+        controller.enqueue(encode({ type: "done" }));
+        controller.close();
       },
     });
 
@@ -149,10 +214,10 @@ Format your response as a flowing narrative story. Do not use headers or bullet 
         "Connection": "keep-alive",
       },
     });
-  } catch (error) {
-    console.error("hadithi-stream error:", error);
+
+  } catch (err) {
     return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
+      JSON.stringify({ error: String(err) }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

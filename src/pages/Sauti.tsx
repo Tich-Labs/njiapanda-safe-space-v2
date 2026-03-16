@@ -14,33 +14,33 @@ type SautiState = "idle" | "consent" | "connecting" | "listening" | "processing"
 type Lang = "sw" | "en";
 
 const labels: Record<string, Record<Lang, string>> = {
-  tapToSpeak: { en: "Tap to speak", sw: "Gusa kuongea" },
-  listening: { en: "Listening...", sw: "Ninakusikiliza..." },
-  tapToEnd: { en: "Tap to end", sw: "Gusa kumaliza" },
-  connecting: { en: "Connecting you safely...", sw: "Inakuunganisha salama..." },
-  received: { en: "Your message has been received.", sw: "Ujumbe wako umepokewa." },
+  tapToSpeak: { en: "Tap to speak", sw: "Tap to speak" },
+  listening: { en: "Listening...", sw: "Listening..." },
+  tapToEnd: { en: "Tap to end", sw: "Tap to end" },
+  connecting: { en: "Connecting safely...", sw: "Connecting safely..." },
+  received: { en: "Your message has been received.", sw: "Your message has been received." },
   helperReach: {
     en: "A trained helper will reach out to you safely.",
-    sw: "Msaidizi aliyefunzwa atawasiliana nawe salama.",
+    sw: "A trained helper will reach out to you safely.",
   },
-  leaveSafely: { en: "Leave this page safely", sw: "Ondoka ukurasa huu kwa usalama" },
-  consentTitle: { en: "Before we begin", sw: "Kabla hatujaanza" },
+  leaveSafely: { en: "Leave this page safely", sw: "Leave this page safely" },
+  consentTitle: { en: "Before we begin", sw: "Before we begin" },
   consentBody: {
     en: "Sauti listens to you in real time.\nNo recording is saved.\nYour conversation helps connect you to support.\nYou can stop at any time.",
-    sw: "Sauti inakusikiliza wakati halisi.\nHakuna rekodi inayohifadhiwa.\nMazungumzo yako yanakusaidia kupata msaada.\nUnaweza kusimama wakati wowote.",
+    sw: "Sauti listens to you in real time.\nNo recording is saved.\nYour conversation helps connect you to support.\nYou can stop at any time.",
   },
-  consentBtn: { en: "I understand — start", sw: "Naelewa — anza" },
+  consentBtn: { en: "I understand — start", sw: "I understand — start" },
   micError: {
     en: "Microphone access is needed to use Sauti",
-    sw: "Unahitaji ufikiaji wa kipaza sauti kutumia Sauti",
+    sw: "Microphone access is needed to use Sauti",
   },
   micErrorBody: {
     en: "Please allow microphone access in your browser to continue.\nYou may need to click the microphone icon in your address bar.",
-    sw: "Tafadhali ruhusu ufikiaji wa kipaza sauti kwenye kivinjari chako kuendelea.\nHuenda ukahitaji kubonyeza ikoni ya kipaza sauti kwenye upau wa anwani.",
+    sw: "Please allow microphone access in your browser to continue.\nYou may need to click the microphone icon in your address bar.",
   },
-  tryAgain: { en: "Try again", sw: "Jaribu tena" },
-  cameraOn: { en: "Camera on", sw: "Kamera imewashwa" },
-  tapCamera: { en: "Show camera", sw: "Onyesha kamera" },
+  tryAgain: { en: "Try again", sw: "Try again" },
+  cameraOn: { en: "Camera on", sw: "Camera on" },
+  tapCamera: { en: "Show camera", sw: "Show camera" },
 };
 
 const handleExit = () => {
@@ -51,9 +51,7 @@ const handleExit = () => {
 
 const Sauti = () => {
   const [state, setState] = useState<SautiState>("idle");
-  const [lang, setLang] = useState<Lang>(
-    () => (sessionStorage.getItem("sauti-lang") as Lang) || "sw"
-  );
+  const [lang, setLang] = useState<Lang>("en");
   const [transcript, setTranscript] = useState<{ speaker: string; text: string }[]>([]);
   const [interrupted, setInterrupted] = useState(false);
   const [cameraActive, setCameraActive] = useState(false);
@@ -123,7 +121,7 @@ const Sauti = () => {
     return () => clearInterval(interval);
   }, [cameraActive]);
 
-  const t = useCallback((key: string) => labels[key]?.[lang] ?? key, [lang]);
+  const t = useCallback((key: string) => labels[key]?.en ?? key, []);
 
   /** Convert Float32 PCM to base64 Int16 PCM */
   const pcmToBase64 = (float32: Float32Array): string => {
@@ -337,10 +335,8 @@ const Sauti = () => {
               system_instruction: {
                 parts: [
                   {
-                    text:
-                      lang === "sw"
-                        ? SAUTI_SYSTEM_PROMPT_SW
-                        : SAUTI_SYSTEM_PROMPT_EN,
+                    text: SAUTI_SYSTEM_PROMPT_EN,
+                    // Swahili: SAUTI_SYSTEM_PROMPT_SW - coming soon
                   },
                 ],
               },
@@ -371,6 +367,10 @@ const Sauti = () => {
             modelIsSpeakingRef.current = false;
             setInterrupted(true);
             setTimeout(() => setInterrupted(false), 600);
+            
+            if (!hasMicStartedRef.current && ws.readyState === WebSocket.OPEN) {
+              beginMicCapture();
+            }
           }
 
           // Handle turn complete
@@ -438,14 +438,51 @@ const Sauti = () => {
     processor.connect(silentGain);
     silentGain.connect(audioContext.destination);
 
+    let lastAudioLevel = 0;
+    let silenceFrames = 0;
+    const SPEECH_THRESHOLD = 0.02;
+    const INTERRUPTION_DELAY = 5;
+
     processor.onaudioprocess = (e) => {
       if (ws.readyState !== WebSocket.OPEN) return;
       const pcm = e.inputBuffer.getChannelData(0);
+      
+      let maxAmp = 0;
+      for (let i = 0; i < pcm.length; i++) {
+        const abs = Math.abs(pcm[i]);
+        if (abs > maxAmp) maxAmp = abs;
+      }
+      
+      const isSpeaking = maxAmp > SPEECH_THRESHOLD;
+      
+      if (isSpeaking) {
+        silenceFrames = 0;
+      } else {
+        silenceFrames++;
+      }
+      
+      const userIsSpeaking = isSpeaking && maxAmp > lastAudioLevel * 1.5 && lastAudioLevel > 0.01;
+      lastAudioLevel = maxAmp;
+
       const b64 = pcmToBase64(pcm);
 
-      // Interruption support: if model is speaking, send turn_complete first
-      if (modelIsSpeakingRef.current) {
-        ws.send(JSON.stringify({ client_content: { turn_complete: true } }));
+      if (modelIsSpeakingRef.current && userIsSpeaking) {
+        ws.send(JSON.stringify({
+          realtime_input: {
+            audio_stream_end: true,
+          },
+        }));
+        modelIsSpeakingRef.current = false;
+        setInterrupted(true);
+        setTimeout(() => setInterrupted(false), 600);
+      }
+
+      if (modelIsSpeakingRef.current && silenceFrames > INTERRUPTION_DELAY && isSpeaking) {
+        ws.send(JSON.stringify({
+          realtime_input: {
+            audio_stream_end: true,
+          },
+        }));
         modelIsSpeakingRef.current = false;
       }
 
@@ -501,8 +538,8 @@ const Sauti = () => {
       <video ref={videoRef} autoPlay muted playsInline className="hidden" />
       <canvas ref={canvasRef} className="hidden" />
 
-      {/* Language toggle */}
-      <div className="fixed top-3 left-3 z-50 flex gap-1">
+      {/* Language toggle - disabled for hackathon */}
+      {/* <div className="fixed top-3 left-3 z-50 flex gap-1">
         {(["en", "sw"] as Lang[]).map((l) => (
           <button
             key={l}
@@ -516,7 +553,10 @@ const Sauti = () => {
             {l}
           </button>
         ))}
-      </div>
+      </div> */}
+      <p className="fixed top-3 left-3 z-50 font-mono text-xs text-white/30">
+        EN
+      </p>
 
       {/* Camera active indicator */}
       {cameraActive && (
@@ -670,7 +710,7 @@ const Sauti = () => {
           <div className="text-center">
             <p className="font-sans text-sm text-white/60">{t("tapToSpeak")}</p>
             <p className="mt-1 font-mono text-xs" style={{ color: "#C4871A" }}>
-              {lang === "en" ? "Gusa kuongea" : "Tap to speak"}
+              Kiswahili coming soon
             </p>
           </div>
         )}

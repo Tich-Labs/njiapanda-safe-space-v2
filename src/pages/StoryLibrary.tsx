@@ -2,11 +2,12 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useAccessibility } from "@/hooks/useAccessibility";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Heart, Send, Phone, Filter, Search, X } from "lucide-react";
+import { ArrowLeft, Heart, Send, Phone, Filter, Search, X, BookOpen, Sparkles, Type, Image, Music } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
+import { Textarea } from "@/components/ui/textarea";
 
 type Lang = "en" | "sw";
 
@@ -103,6 +104,17 @@ const StoryLibrary = () => {
   const [showForm, setShowForm] = useState(false);
   const [text, setText] = useState("");
   const [abuseType, setAbuseType] = useState("");
+
+  // Tab state: "browse" | "submit" | "generate"
+  const [activeTab, setActiveTab] = useState<"browse" | "submit" | "generate">("browse");
+
+  // AI Generation state
+  const [aiPrompt, setAiPrompt] = useState("");
+  const [aiFormat, setAiFormat] = useState<"text" | "image_text" | "multimedia">("multimedia");
+  const [aiBlocks, setAiBlocks] = useState<any[]>([]);
+  const [aiStreaming, setAiStreaming] = useState(false);
+  const [aiDone, setAiDone] = useState(false);
+  const aiPromptRef = useRef("");
 
   // Dev-only font debug
   const [showFontDebug, setShowFontDebug] = useState(false);

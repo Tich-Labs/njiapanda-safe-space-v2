@@ -11,8 +11,7 @@ const primaryItems = [
 ];
 
 const moreItems = [
-  { icon: Scroll, label: "Hadithi", path: "/hadithi" },
-  { icon: BookOpen, label: "Stories", path: "/stories" },
+  { icon: BookOpen, label: "Hadithi", path: "/hadithi" },
   { icon: MapPin, label: "Resources", path: "/resources" },
   { icon: Heart, label: "Why", path: "/why" },
   { icon: Handshake, label: "Join Us", path: "/join" },

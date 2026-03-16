@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import AudioRecorder from "@/components/AudioRecorder";
 
 const abuseTypes = ["Physical", "Sexual", "Emotional", "Economic", "Other"];
-const languages = ["English", "Kiswahili", "Sheng"];
+const languages = ["English"]; // Kiswahili, Sheng - coming soon
 
 type InputMode = "text" | "audio";
 
