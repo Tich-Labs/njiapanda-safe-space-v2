@@ -6,57 +6,6 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-type ServiceAccount = {
-  client_email: string;
-  private_key: string;
-  project_id?: string;
-};
-
-const bytesToBase64 = (bytes: Uint8Array) =>
-  btoa(String.fromCharCode(...bytes));
-
-const base64UrlFromBytes = (bytes: Uint8Array) =>
-  bytesToBase64(bytes).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
-
-const base64UrlFromString = (s: string) =>
-  base64UrlFromBytes(new TextEncoder().encode(s));
-
-const base64ToBytes = (b64: string) =>
-  Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
-
-const decodePossiblyBase64Json = <T,>(value: string): T => {
-  // Strip outer quotes if the secrets system wrapped the value
-  let trimmed = value.trim();
-  if ((trimmed.startsWith('"') && trimmed.endsWith('"')) ||
-      (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
-    trimmed = trimmed.slice(1, -1);
-  }
-
-  // 1) raw JSON
-  if (trimmed.startsWith("{")) {
-    return JSON.parse(trimmed) as T;
-  }
-
-  // 2) base64-encoded JSON
-  try {
-    const decoded = new TextDecoder().decode(base64ToBytes(trimmed));
-    return JSON.parse(decoded) as T;
-  } catch (e) {
-    console.error("Failed to decode service account key. First 20 chars:", JSON.stringify(trimmed.substring(0, 20)));
-    throw new Error(`Failed to decode service account key: ${e instanceof Error ? e.message : "unknown"}`);
-  }
-};
-
-const pemPkcs8ToBytes = (pem: string) => {
-  // Convert PEM to raw PKCS8 bytes
-  const b64 = pem
-    .replace(/-----BEGIN PRIVATE KEY-----/g, "")
-    .replace(/-----END PRIVATE KEY-----/g, "")
-    .replace(/\s+/g, "")
-    .trim();
-  return base64ToBytes(b64);
-};
-
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -98,9 +47,63 @@ serve(async (req) => {
       );
     }
 
-    // Fallback: direct Vertex AI connection
+    // Primary: Google AI Studio API key (simplest approach)
+    const aiStudioKey = Deno.env.get("GOOGLE_AI_STUDIO_API_KEY");
+    if (aiStudioKey) {
+      const model = Deno.env.get("GEMINI_MODEL") || "gemini-2.0-flash-live";
+      const wsUrl = `wss://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent`;
+      const sessionId = crypto.randomUUID();
+      const expiresAt = Date.now() + 15 * 60 * 1000; // AI Studio tokens don't expire like OAuth
+
+      return new Response(
+        JSON.stringify({
+          wsUrl,
+          accessToken: aiStudioKey, // API key used directly
+          expiresAt,
+          sessionId,
+          model: `models/${model}`,
+          language,
+          zone: zone || "unspecified",
+          authMode: "api_key", // Signal to client to use ?key= param
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    // Fallback: Vertex AI service account (legacy)
     const serviceAccountKey = Deno.env.get("VERTEX_AI_SERVICE_ACCOUNT_KEY");
-    if (!serviceAccountKey) throw new Error("VERTEX_AI_SERVICE_ACCOUNT_KEY not configured");
+    if (!serviceAccountKey) {
+      throw new Error("No AI credentials configured. Set GOOGLE_AI_STUDIO_API_KEY or VERTEX_AI_SERVICE_ACCOUNT_KEY.");
+    }
+
+    // --- Vertex AI OAuth flow (kept for backward compatibility) ---
+    const decodePossiblyBase64Json = <T,>(value: string): T => {
+      let trimmed = value.trim();
+      if ((trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+          (trimmed.startsWith("'") && trimmed.endsWith("'"))) {
+        trimmed = trimmed.slice(1, -1);
+      }
+      if (trimmed.startsWith("{")) return JSON.parse(trimmed) as T;
+      try {
+        const decoded = new TextDecoder().decode(
+          Uint8Array.from(atob(trimmed), (c) => c.charCodeAt(0))
+        );
+        return JSON.parse(decoded) as T;
+      } catch (e) {
+        throw new Error(`Failed to decode service account key: ${e instanceof Error ? e.message : "unknown"}`);
+      }
+    };
+
+    type ServiceAccount = { client_email: string; private_key: string; project_id?: string };
+
+    const base64UrlFromBytes = (bytes: Uint8Array) =>
+      btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+    const base64UrlFromString = (s: string) =>
+      base64UrlFromBytes(new TextEncoder().encode(s));
+    const pemPkcs8ToBytes = (pem: string) => {
+      const b64 = pem.replace(/-----BEGIN PRIVATE KEY-----/g, "").replace(/-----END PRIVATE KEY-----/g, "").replace(/\s+/g, "").trim();
+      return Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+    };
 
     const serviceAccount = decodePossiblyBase64Json<ServiceAccount>(serviceAccountKey);
     if (!serviceAccount?.client_email || !serviceAccount?.private_key) {
@@ -154,9 +157,7 @@ serve(async (req) => {
 
     const tokenBodyText = await tokenResponse.text();
     if (!tokenResponse.ok) {
-      throw new Error(
-        `Token exchange failed: ${tokenResponse.status} ${tokenResponse.statusText} — ${tokenBodyText}`,
-      );
+      throw new Error(`Token exchange failed: ${tokenResponse.status} — ${tokenBodyText}`);
     }
 
     const tokenJson = JSON.parse(tokenBodyText);
@@ -164,7 +165,6 @@ serve(async (req) => {
     if (!accessToken) throw new Error("Token exchange succeeded but access_token missing");
 
     const wsUrl = `wss://${location}-aiplatform.googleapis.com/ws/google.cloud.aiplatform.v1beta1.LlmBidiService/BidiGenerateContent`;
-
     const sessionId = crypto.randomUUID();
     const expiresAt = Date.now() + 5 * 60 * 1000;
 
@@ -177,6 +177,7 @@ serve(async (req) => {
         model: `projects/${projectId}/locations/${location}/publishers/google/models/${model}`,
         language,
         zone: zone || "unspecified",
+        authMode: "bearer",
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );

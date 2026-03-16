@@ -279,7 +279,10 @@ const Sauti = () => {
 
       sessionIdRef.current = data.sessionId;
 
-      const wsUrlWithAuth = `${data.wsUrl}?access_token=${encodeURIComponent(data.accessToken)}`;
+      // AI Studio uses ?key= param; Vertex AI uses ?access_token=
+      const wsUrlWithAuth = data.authMode === "api_key"
+        ? `${data.wsUrl}?key=${encodeURIComponent(data.accessToken)}`
+        : `${data.wsUrl}?access_token=${encodeURIComponent(data.accessToken)}`;
       const ws = new WebSocket(wsUrlWithAuth);
       wsRef.current = ws;
 
