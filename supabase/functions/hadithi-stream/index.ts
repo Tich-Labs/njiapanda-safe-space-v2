@@ -263,7 +263,7 @@ IMPORTANT RULES:
 
             try {
               const parsed = JSON.parse(raw);
-              const text = parsed.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+              const text = parsed.choices?.[0]?.delta?.content ?? "";
               if (!text) continue;
 
               paraBuffer += text;
