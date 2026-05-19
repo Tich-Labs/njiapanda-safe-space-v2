@@ -1,15 +1,14 @@
 # Njiapanda — Paths to Safety
 
-**A community-led GBV survivor support platform for Kenya, powered by Google Gemini Live AI**
+**A community-led GBV survivor support platform for Kenya**
 
 *Njiapanda* is Swahili for **crossroads** — the moment a person stops and asks:
 *is this normal? Is this love? Or is this something I need to name?*
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-2D8A77.svg)](LICENSE)
 [![Live Platform](https://img.shields.io/badge/Platform-Live-C4871A.svg)](https://njiapanda-v2.web.app)
-[![Hosted on Firebase](https://img.shields.io/badge/Hosted-Firebase-FFCA28.svg)](https://firebase.google.com)
-[![Powered by Gemini](https://img.shields.io/badge/AI-Gemini%20Live-4285F4.svg)](https://ai.google.dev)
-[![Google Cloud](https://img.shields.io/badge/Cloud-Google%20Cloud-4285F4.svg)](https://cloud.google.com)
+[![Built with Lovable](https://img.shields.io/badge/Built%20with-Lovable-E9A83A.svg)](https://lovable.dev)
+[![Powered by Supabase](https://img.shields.io/badge/Database-Supabase-3ECF8E.svg)](https://supabase.com)
 [![DPG Aligned](https://img.shields.io/badge/DPG-Aligned-0F3D34.svg)](https://digitalpublicgoods.net)
 
 [🌍 Live Platform](https://njiapanda-v2.web.app) · [📖 Why Njiapanda](https://njiapanda-v2.web.app/why) · [🤝 Join the Network](https://njiapanda-v2.web.app/join) · [💬 LinkedIn](https://www.linkedin.com/in/naijeriatoweett/)
@@ -21,9 +20,9 @@
 Most of the services GBV survivors need already exist in Kenya.
 Shelters. Legal aid. Crisis hotlines. Counselling.
 
-**The gap was never the absence of help. It was the distance between a person and the moment they could reach it.**
+**The gap is not help. It is the distance between a person and the moment they can reach it.**
 
-And before that distance — there is another one. Abuse does not announce itself. It settles in slowly, quietly, until it starts to feel like normal. No hotline reaches a person at that moment.
+Abuse settles in slowly, quietly, until it starts to feel normal. No hotline reaches a person at that moment.
 
 Njiapanda does.
 
@@ -31,15 +30,25 @@ Njiapanda does.
 
 ## What Njiapanda Is
 
-> **Not another app. A layer on top of what already exists.**
+> **Not another app. A coordination layer over what already exists.**
 
-Njiapanda is a coordination layer — connecting survivors to trained community responders, verified organisations, and safe houses through three interlocking journeys:
+Njiapanda connects survivors to trained community responders, verified organisations, and safe houses through three interlocking journeys:
 
 | Journey | Who | What they do |
 |---|---|---|
-| 🟢 **Survivor** | Anonymous visitor | Journeys through an emotional progression: recognition (self-check) → connection (stories) → exploration (write/safety/resources) → support (helpline/signal). No account. No trace. |
-| 🟡 **Conductor** | Trained community responder | Receives signals, assesses risk with AI support, coordinates safe house placement and referrals. |
-| 🔵 **Admin** | Platform manager | Manages conductors, moderates stories, monitors escalation alerts, reviews metrics. |
+| 🟢 **Survivor** | Anonymous visitor | Moves from recognition to connection, exploration, and support — with no account, no trace, and trauma-informed pacing. |
+| 🟡 **Conductor** | Trained responder | Receives signals, reviews AI-assisted risk briefs, and coordinates referrals to safe houses and services. |
+| 🔵 **Admin** | Platform manager | Moderates content, manages conductors, monitors escalation, and maintains accountability. |
+
+---
+
+## Why this is challenge-ready
+
+- **Live product, not prototype:** deployed at https://njiapanda-v2.web.app
+- **Gemini multimodal:** text storytelling, voice transcription, image generation, and structured risk assessment
+- **Trauma-informed by design:** calm confirmations, progressive disclosure, emergency exit, anonymous signal path
+- **Interoperable architecture:** Supabase for app data and realtime, Firebase for AI gateway, Cloud Run for agent-powered story sourcing, MongoDB for curated articles
+- **Built for Kenya:** M-Pesa payments, Leaflet + OpenStreetMap mapping, Kenyan emergency helplines, and localised narrative prompts
 
 ---
 
@@ -306,8 +315,9 @@ Admin Login ──▶ Admin Portal
 | **AI Transcription** | [Google Gemini 2.5 Flash](https://ai.google.dev) via Firebase Cloud Functions | Voice recording → text transcription |
 | Frontend | React + Vite + Tailwind CSS | Mobile-first, trauma-informed UI |
 | Hosting | [Firebase Hosting](https://firebase.google.com) | Global CDN, SSL, custom domains |
-| Database + Auth | [Firebase Firestore](https://firebase.google.com/firestore) + Firebase Auth | NoSQL database, user authentication, Realtime |
-| Serverless Functions | Firebase Cloud Functions | AI processing, payments, notifications |
+| Database + Auth | [Supabase](https://supabase.com) | Postgres, auth, realtime, storage, and user management |
+| Serverless Functions | Supabase Edge Functions | In-app APIs, moderation, checkout, user workflows, and realtime hooks |
+| AI Gateway | Firebase Cloud Functions | Gemini model calls, story streaming, transcription, Firestore signals, and MongoDB article sourcing |
 | Cloud Run Agent | Python + FastAPI + Google ADK | Hadithi agent with triage + service lookup tools (GCP) |
 | Interoperability | [OpenFN](https://openfn.org) | Bridge to DHIS2, Kobo, CommCare, Salesforce NPSP |
 | Maps | [Leaflet](https://leafletjs.com) + [OpenStreetMap](https://openstreetmap.org) | 100% open source, zone-level only |
@@ -385,7 +395,7 @@ Admin Login ──▶ Admin Portal
                              └────────────────────┘
                            │
        ┌────────────────────▼──────────────────────┐
-       │     Firebase Firestore                   │
+       │     Supabase                              │
        │                                           │
        │ • stories      • signals   • cases      │
        │ • conductors   • resources  • safe_houses│
@@ -510,9 +520,9 @@ message
 status
 extra (JSON)
 
-Firebase Firestore (Voice Session Signals)
+Supabase (Voice Session Signals)
 ───────────────
-signals (collection)
+signals (table)
 ├── urgency
 ├── zone
 ├── resource_needed
@@ -597,7 +607,8 @@ Every decision on this platform is a safety decision.
 ### Prerequisites
 
 - Node.js 22.22.3 or Bun
-- Firebase project (for Hosting, Firestore, Auth, Cloud Functions)
+- Supabase project (for database, auth, realtime, and edge functions)
+- Firebase project (for Hosting and Cloud Functions)
 - Google AI Studio API key (for Gemini)
 - MongoDB Atlas account (free tier) — required for MCP article sourcing feature ([setup guide](MCP_SETUP.md))
 
@@ -806,7 +817,7 @@ Judges can test all features of Njiapanda using the live deployment at https://n
 
 1. **API Connectivity**
    - Open browser dev tools → Network tab
-   - Verify Firebase Firestore calls succeed (look for `googleapis.com` requests)
+   - Verify Supabase requests succeed (look for `supabase.co` or your Supabase project domain)
    - Verify Google Gemini API calls succeed for AI features
    - Check for proper error handling and fallback behavior
 
@@ -995,7 +1006,7 @@ Thanks to the organisations already doing this work in Kenya every day — FIDA 
 
 | Criterion | Evidence |
 |---|---|
-| **Google Cloud Native** | Backend on Cloud Run, Vertex AI for Gemini API, Firebase Hosting + Firestore. All edge functions use Firebase Cloud Functions calling Gemini API directly. |
+| **Google Cloud Native** | Clean separation: Supabase for app data/auth/realtime, Firebase Cloud Functions for Gemini AI, and Cloud Run for agentic story sourcing. |
 | **System Design** | Agent logic handles errors gracefully. Story generation pipeline coordinates text + image calls. Voice agent manages WebSocket connections with reconnection logic. |
 | **Robustness** | System prompts for trauma-informed responses. Content moderation on all user inputs. Error handling with graceful fallbacks. |
 
