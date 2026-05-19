@@ -42,7 +42,7 @@ const ArchitectureDiagram = () => {
   };
 
   return (
-    <div className="min-h-screen p-6" style={{ backgroundColor: "#091F1A" }}>
+    <div className="min-h-screen p-6 bg-background text-white">
       <div className="mx-auto max-w-5xl">
         <div className="mb-6 flex items-center justify-between">
           <h1 className="font-display text-2xl font-semibold text-white">
@@ -52,7 +52,7 @@ const ArchitectureDiagram = () => {
             onClick={downloadPng}
             disabled={downloading}
             className="flex items-center gap-2 rounded-lg px-4 py-2 font-sans text-sm font-semibold transition-all active:scale-95 disabled:opacity-40"
-            style={{ backgroundColor: "#C4871A", color: "#091F1A" }}
+            className="bg-primary text-primary-foreground"
           >
             <Download className="h-4 w-4" />
             {downloading ? "Exporting..." : "Download PNG"}
@@ -63,7 +63,7 @@ const ArchitectureDiagram = () => {
           id="arch-svg"
           viewBox="0 0 1200 800"
           className="w-full rounded-xl border border-white/10"
-          style={{ backgroundColor: "#091F1A" }}
+          className="bg-background text-white"
           xmlns="http://www.w3.org/2000/svg"
         >
           {/* Background grid */}

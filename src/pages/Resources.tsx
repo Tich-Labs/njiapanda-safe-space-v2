@@ -26,10 +26,50 @@ const zoneCenters: Record<string, [number, number]> = {
   National: [-1.2921, 36.8219],
 };
 
+const defaultResources: Tables<"resources">[] = [
+  {
+    id: "local-helpline-1",
+    name: "National GBV Hotline",
+    type: "Helpline",
+    zone: "National",
+    contact: "1195",
+    hours: "24/7",
+    verified: true,
+  },
+  {
+    id: "local-childline",
+    name: "Childline Kenya",
+    type: "Helpline",
+    zone: "National",
+    contact: "116",
+    hours: "24/7",
+    verified: true,
+  },
+  {
+    id: "local-kenya-red-cross",
+    name: "Kenya Red Cross",
+    type: "Helpline",
+    zone: "National",
+    contact: "1199",
+    hours: "24/7",
+    verified: false,
+  },
+  {
+    id: "local-fida-kenya",
+    name: "FIDA Kenya Legal Support",
+    type: "Legal Aid",
+    zone: "National",
+    contact: "+254202719913",
+    hours: "Mon–Fri",
+    verified: false,
+  },
+];
+
 const Resources = () => {
   const navigate = useNavigate();
   const { lowBandwidth } = useAccessibility();
-  const [resources, setResources] = useState<Tables<"resources">[]>([]);
+  const [resources, setResources] = useState<Tables<"resources">[]>(defaultResources);
+  const [useFallbackResources, setUseFallbackResources] = useState(true);
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("");
   const [filterZone, setFilterZone] = useState("");
@@ -39,9 +79,23 @@ const Resources = () => {
 
   useEffect(() => {
     const fetchResources = async () => {
-      const { data } = await supabase.from("resources").select("*").order("name");
-      if (data) setResources(data);
-      setLoading(false);
+      try {
+        const { data, error } = await supabase.from("resources").select("*").order("name");
+        if (error) {
+          console.error("Resource fetch error:", error);
+        }
+        if (data && data.length > 0) {
+          setResources(data);
+          setUseFallbackResources(false);
+        } else {
+          setUseFallbackResources(true);
+        }
+      } catch (error) {
+        console.error("Resource fetch failed:", error);
+        setUseFallbackResources(true);
+      } finally {
+        setLoading(false);
+      }
     };
     fetchResources();
   }, []);
@@ -127,6 +181,11 @@ const Resources = () => {
         {lowBandwidth && (
           <div className="low-bandwidth-banner" role="status">
             Low data mode — map replaced with list view
+          </div>
+        )}
+        {!loading && useFallbackResources && (
+          <div className="rounded-2xl border border-border bg-muted/10 p-4 text-sm text-muted-foreground">
+            Showing built-in support listings while the shared directory is empty or unavailable. Add resource entries in the admin panel or connect a seeded Supabase dataset for the full directory.
           </div>
         )}
 

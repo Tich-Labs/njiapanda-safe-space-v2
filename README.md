@@ -37,7 +37,7 @@ Njiapanda is a coordination layer — connecting survivors to trained community 
 
 | Journey | Who | What they do |
 |---|---|---|
-| 🟢 **Survivor** | Anonymous visitor | Reads a story, recognises abuse, speaks to Hadithi (AI companion), submits a quiet signal, finds real organisations nearby, taps to call. No account. No trace. |
+| 🟢 **Survivor** | Anonymous visitor | Journeys through an emotional progression: recognition (self-check) → connection (stories) → exploration (write/safety/resources) → support (helpline/signal). No account. No trace. |
 | 🟡 **Conductor** | Trained community responder | Receives signals, assesses risk with AI support, coordinates safe house placement and referrals. |
 | 🔵 **Admin** | Platform manager | Manages conductors, moderates stories, monitors escalation alerts, reviews metrics. |
 
@@ -88,13 +88,20 @@ Zone-filtered case management for trained responders:
 - **Zone-scoped** — conductors only see their assigned zone's data
 
 ### 📖 Hadithi — AI-Powered Multimodal Storytelling
-Interactive storytelling engine combining **three modes** for GBV awareness education:
+Interactive storytelling engine combining **three sources** for GBV awareness:
+- **Sourced survivor stories** — real personal narratives curated from organisations (UNFPA, UNHCR, SafeAndEqual) via web search or manual URL submission
+- **User-submitted stories** — anonymous survivor testimonies shared via text or voice
+- **AI-generated awareness stories** — fictional illustrated narratives for education
 
 #### Read Stories
-- Browse approved community and AI-generated stories
+- Browse survivor stories from all three sources in one feed
 - Search and filter by abuse type
-- "This sounds familiar" resonance button (anonymous)
+- **Sourced stories** with full attribution: organisation, location, and link to original
+- User stories with "This sounds familiar" resonance button (anonymous)
 - AI-generated stories clearly labelled
+- **No news articles** — only personal survivor narratives
+- **Submit a story link** — paste any survivor story URL to fetch and add it
+- URL verification ensures no broken links in the feed
 
 #### Share Your Story (Chat-Style)
 - **ChatGPT-like conversational interface** — select abuse type, then type or record messages
@@ -109,10 +116,24 @@ Interactive storytelling engine combining **three modes** for GBV awareness educ
 - **Image generation** — Gemini 3.1 Flash Image Preview creates contextual illustrations via Firebase Cloud Functions
 - **SSE streaming** — stories appear progressively as they're generated
 - **Diverse characters** — randomised Kenyan names, locations, settings, perspectives, and abuse types
-- **Bilingual** — English and Kiswahili
+- **Simple English** — prompts enforce everyday language; no advanced words or forced Swahili
 - **Disclaimer** — clear labelling that stories are fictional and for awareness only
 
 **Tech:** Gemini 2.5 Flash (text), Gemini 3.1 Flash Image Preview (images), Firebase Cloud Functions, SSE streaming.
+
+### 🌐 Sourced Survivor Stories — Agent-Powered Curation
+AI-driven curation of real survivor stories from reputable organisations, integrated directly into the Read Stories experience:
+
+- **Agent-powered discovery** — Gemini searches the web for personal survivor narratives from UNFPA, UNHCR, SafeAndEqual, and similar organisations
+- **URL verification** — every link is checked (HEAD request) before storage; broken URLs are automatically skipped
+- **Manual URL submission** — users can paste any survivor story URL to fetch and extract the narrative via the `/ingest-url` endpoint
+- **MongoDB Atlas storage** — curated stories stored with full-text search, abuse type + location indexing
+- **Full attribution** — every story shows organisation name, location, and a link to the original
+- **Filterable** — By abuse type and keyword search, alongside other story types
+- **No news articles** — only first-person survivor narratives and personal journey features
+- **Trigger on demand** — Users click the "Discover" button to trigger the agent, or paste a link manually
+
+**Tech:** Gemini 2.5 Flash (search + parsing), MongoDB Atlas (storage + retrieval), GCP Cloud Run (API + agent host), `requests` + `BeautifulSoup` (URL fetch + page parsing).
 
 ### 🔵 Admin Portal
 Full platform management with 12 tabs:
@@ -169,37 +190,62 @@ Onboarding for three partner types:
 
 ## Three User Journeys
 
-### 🟢 Journey 1: Survivor
+### 🟢 Journey 1: Survivor — The Emotional Progression
+
+The homepage is designed as a guided emotional journey, not a service menu. Each section builds on the one before it — recognition comes before action.
 
 ```
-Landing Page
+Homepage (Emotional Journey)
     │
-    ├──▶ 📖 Hadithi (Stories + AI)
-    │         │
-    │         ├──▶ Read stories ──▶ "This sounds familiar" ──▶ Recognise abuse
-    │         │
-    │         ├──▶ Share yours ──▶ Chat-style AI conversation
-    │         │         │          Type or record voice
-    │         │         │          AI deepening follow-ups
-    │         │         └──▶ Submit anonymously
-    │         │
-    │         └──▶ Generate ──▶ AI-illustrated awareness stories
-    │                          Text + watercolour images
+    ├──▶ 🖼️ Hero Image
+    │     (Quiet visual — no distracting text)
     │
-    ├──▶ 📡 Quiet Signal ──▶ Select urgency + resources
-    │         │                No login, no trace
-    │         └──▶ Confirmed ──▶ Conductor notified
+    ├──▶ 🔒 Reassurance
+    │     "You are safe here. You are anonymous."
     │
-    ├──▶ 🛡️ Safety Plan ──▶ 6-step checklist (works offline)
+    ├──▶ 🤔 Recognition (Primary)
+    │     "Something feels wrong?"
+    │     └──▶ Take a gentle self-check
+    │            │
+    │            ├──▶ "Explore your options" ──▶ Back to homepage
+    │            └──▶ "Read stories from others" ──▶ Hadithi
     │
-    ├──▶ 🗺️ Resources ──▶ Map + directory of verified orgs
+    ├──▶ 📖 Connection
+    │     "Hear from others like you"
+    │     └──▶ Read quiet stories ──▶ Hadithi
+    │            │
+    │            ├──▶ Read tab ──▶ Browse survivor stories
+    │            ├──▶ Share tab ──▶ Type or record your story
+    │            └──▶ Generate tab ──▶ AI-illustrated awareness stories
     │
-    ├──▶ 📞 Helpline ──▶ Tap-to-call emergency numbers
+    ├──▶ 🔍 Exploration (Progressive disclosure)
+    │     "Explore your options when you're ready"
+    │     └──▶ Expand to reveal:
+    │            ├──▶ ✏️ Write what happened ──▶ /share
+    │            ├──▶ 🛡️ Plan for your safety ──▶ /safety
+    │            └──▶ 🗺️ Find help near you ──▶ /resources
     │
-    └──▶ 🚪 Emergency Exit (any time) ──▶ weather.com
+    ├──▶ 🤲 Support (Collapsed by default)
+    │     "When you need support"
+    │     └──▶ Expand to reveal:
+    │            ├──▶ 📞 Talk to someone who can help ──▶ /helpline
+    │            └──▶ 📡 Send a quiet signal for help ──▶ /signal
+    │
+    └──▶ 🔒 Trust banner
+          "No one will know you visited. You can leave at any time."
+
+
+   🚪 Emergency Exit (always present on every page) ──▶ weather.com
 ```
 
-**Key principle:** No account. No trace. Every action is anonymous.
+**Emotional flow:**
+1. **Recognition** ("Something feels wrong?") — Self-check as the primary CTA. No pressure to name it yet.
+2. **Connection** ("Hear from others") — Stories before action. Normalise the experience through others' voices.
+3. **Exploration** (Progressive disclosure) — Options revealed only when the user asks. Low cognitive load.
+4. **Support** (Collapsed by default) — Help is available but not forced. User chooses when to engage.
+5. **Exit** — Emergency escape is never more than one tap away.
+
+**Key principle:** No account. No trace. Recognition before action. Progressive disclosure at every step.
 
 ### 🟡 Journey 2: Conductor (Community Responder)
 
@@ -267,6 +313,8 @@ Admin Login ──▶ Admin Portal
 | Maps | [Leaflet](https://leafletjs.com) + [OpenStreetMap](https://openstreetmap.org) | 100% open source, zone-level only |
 | Payments | Stripe + M-Pesa + PayPal | M-Pesa from day one — built for Kenya |
 | SMS (planned) | [Africa's Talking](https://africastalking.com) | Low-data and feature phone access |
+| **MCP Integration** | [MongoDB MCP Server](https://www.mongodb.com/docs/mcp-server/) | Agent-powered story curation: web search → Gemini parse → URL verify → store in MongoDB |
+| Article Store | [MongoDB Atlas](https://mongodb.com/atlas) (free tier) | Curated survivor stories with full-text search, abuse type + location indexing |
 
 ### Google Cloud / Gemini Models Used
 
@@ -302,23 +350,39 @@ Admin Login ──▶ Admin Portal
        ┌─────────────────────▼─────────────────────┐
        │     Firebase Cloud Functions               │
        │                                             │
-       │ • hadithi-stream (story generation)       │
-       │ • story-deepen (chat follow-ups)          │
-       │ • transcribe-audio (voice transcription) │
-       │ • moderate-story (content safety)         │
-       │ • ai-brief (risk assessment)             │
-       │ • create-checkout (Stripe)                │
-       │ • stripe-webhook (payments)               │
-       └────────────────────┬──────────────────────┘
-                           │
-       ┌────────────────────▼──────────────────────┐
-       │     Google Gemini API                    │
-       │                                           │
-       │ • gemini-2.5-flash (stories, transcription)│
-       │ • gemini-2.5-flash-lite (moderation)    │
-       │ • gemini-3-flash-preview (risk briefs)  │
-       │ • gemini-3.1-flash-image-preview (images)│
-       └───────────────────────────────────────────┘
+        │ • hadithi-stream (story generation)       │
+        │ • transcribe-audio (voice transcription) │
+        │ • moderate-story (content safety)         │
+        │ • ai-brief (risk assessment)             │
+        │ • create-checkout (Stripe)                │
+        │ • stripe-webhook (payments)               │
+        │
+        ├── GCP Cloud Run (article-sourcing agent) ──┐
+       │    ├── GET /articles (article API)          │
+       │    ├── POST /search-and-ingest (agent)      │
+       │    └── GET /health                          │
+       │                                             │
+       └────────────┬───────────┬────────────────────┘
+                    │           │
+       ┌────────────▼────┐ ┌───▼──────────────────────┐
+       │  Google Gemini  │ │  MongoDB MCP Server       │
+       │  API            │ │  (agent tool layer)       │
+       │                 │ │                            │
+       │ • gemini-2.5-   │ │ • insertMany (store       │
+       │   flash (source)│ │   sourced articles)        │
+       │ • gemini-2.5-   │ │ • find / aggregate        │
+       │   flash-lite    │ │   (retrieve & filter)     │
+       │ • gemini-3-     │ │ • createIndex (text/      │
+       │   flash-preview │ │   vector search)          │
+       └─────────────────┘ └───────────┬────────────────┘
+                                       │
+                             ┌─────────▼─────────┐
+                             │  MongoDB Atlas     │
+                             │  (free tier)       │
+                             │                    │
+                             │ • sourced_articles │
+                             │   collection       │
+                             └────────────────────┘
                            │
        ┌────────────────────▼──────────────────────┐
        │     Firebase Firestore                   │
@@ -383,12 +447,14 @@ An interactive architecture diagram with PNG export is available at [`/architect
 | `notify-feedback` | Firebase Cloud Functions | Feedback notification routing | — |
 | `create-checkout` | Firebase Cloud Functions | Stripe checkout session creation | — |
 | `stripe-webhook` | Firebase Cloud Functions | Stripe payment confirmation handling | — |
+| `article-sourcing` | GCP Cloud Run | Agentic article sourcing agent: search, parse, store via MongoDB MCP + REST API (list, get, ingest) | Gemini 2.5 Flash |
 
-### GCP Cloud Run (Hadithi Agent)
+### GCP Cloud Run (Story Sourcing Agent)
 
 | Function | Purpose | Tech |
 |---|---|---|
 | `hadithi-gateway` | Python FastAPI backend for story generation with ADK tools | Python + FastAPI + Google ADK |
+| `article-sourcing` | Python FastAPI agent for survivor story search, URL ingestion, Gemini parsing, URL validation, MongoDB storage | Python + FastAPI + google-generativeai + pymongo + requests + BeautifulSoup |
 
 ---
 
@@ -418,8 +484,8 @@ name             name             zone
 zone             type             capacity_status
 role             zone             type
 active           contact          updated_at
-                  hours
-                  verified
+                 hours
+                 verified
 
 profiles         user_roles       feedback
 ───────         ────────         ────────
@@ -427,9 +493,9 @@ id               id               id
 full_name        user_id          type (bug/contact/suggestion/other)
 zone             role (admin/     message
 created_at       conductor/user)  email
-                                   page_url
-                                   status
-                                   resolved_at / resolved_by
+                                  page_url
+                                  status
+                                  resolved_at / resolved_by
 
 partner_expressions    contributions    platform_config    audit_log
 ───────               ────────         ────────           ────────
@@ -530,9 +596,10 @@ Every decision on this platform is a safety decision.
 
 ### Prerequisites
 
-- Node.js 18+ or Bun
+- Node.js 22.22.3 or Bun
 - Firebase project (for Hosting, Firestore, Auth, Cloud Functions)
 - Google AI Studio API key (for Gemini)
+- MongoDB Atlas account (free tier) — required for MCP article sourcing feature ([setup guide](MCP_SETUP.md))
 
 ### Environment Variables
 
@@ -553,6 +620,11 @@ VITE_GCP_FUNCTION_URL=https://hadithi-gateway-xxxx-uc.a.run.app
 
 # OpenFN integration
 OPENFN_WEBHOOK_URL=your_webhook           # OpenFN integration
+
+# MongoDB (for story sourcing — see MCP_SETUP.md)
+MONGODB_CONNECTION_STRING=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/njiapanda
+MONGODB_DB_NAME=njiapanda
+MONGODB_COLLECTION_STORIES=sourced_articles
 ```
 
 ### Run Locally
@@ -597,6 +669,21 @@ gcloud run deploy sauti-agent \
   --set-env-vars GOOGLE_CLOUD_PROJECT_ID=njiapanda-safe-space
 ```
 
+#### Option 3: GCP Cloud Run (Story Sourcing Agent)
+
+```bash
+cd gcp-functions/article-sourcing
+
+gcloud run deploy article-sourcing \
+  --source . \
+  --region us-central1 \
+  --allow-unauthenticated \
+  --set-env-vars "MONGODB_CONNECTION_STRING=$MONGODB_CONNECTION_STRING,GEMINI_API_KEY=$GEMINI_API_KEY,MONGODB_DB_NAME=njiapanda,MONGODB_COLLECTION_STORIES=sourced_articles"
+
+# After deploy, set your URL in .env:
+# VITE_ARTICLE_SOURCING_URL=https://article-sourcing-xxxx-uc.a.run.app
+```
+
 For detailed GCP deployment instructions, see [GCP_DEPLOY.md](GCP_DEPLOY.md).
 
 ## Reproducible Testing Instructions
@@ -607,7 +694,8 @@ Judges can test all features of Njiapanda using the live deployment at https://n
 
 1. **Visit the Live Platform**
    - Open https://njiapanda-v2.web.app in any modern browser
-   - Verify the hero section loads with trust banner and quick actions
+   - Verify the hero image loads, followed by the reassurance banner
+   - Confirm the emotional journey flows: Recognition → Connection → Exploration → Support
 
 2. **Test Hadithi Storytelling Features**
    - Navigate to `/hadithi` or click "Hadithi (Stories + AI)" 
@@ -805,7 +893,8 @@ Njiapanda is designed to meet the [DPG Standard](https://digitalpublicgoods.net/
 
 | Route | Description | Access |
 |---|---|---|
-| `/` | Home — hero, quick actions, trust banner | 🌍 Public |
+| `/` | Home — emotional journey: recognition, connection, exploration, support | 🌍 Public |
+| `/self-check` | Gentle self-check — recognise abuse without pressure | 🌍 Public |
 | `/hadithi` | **Hadithi** — AI storytelling (Read, Share chat, Generate illustrated) | 🌍 Public |
 | `/share` | Share Your Story — text or voice submission, AI moderated | 🌍 Anonymous |
 | `/signal` | Quiet help signal — anonymous, 3 fields only | 🌍 Anonymous |
@@ -819,6 +908,10 @@ Njiapanda is designed to meet the [DPG Standard](https://digitalpublicgoods.net/
 | `/dashboard` | Conductor dashboard — zone-filtered cases, AI briefs | 🔒 Conductor |
 | `/admin` | Admin portal — 12 tabs of platform management | 🔒 Admin |
 | `/architecture` | System architecture diagram (exportable as PNG) | 🌍 Public |
+| `POST /search-and-ingest` | Agentic survivor story search + ingest via Gemini + MongoDB (Cloud Run) | 🔒 Backend |
+| `POST /ingest-url` | Ingest a specific survivor story URL — fetches page, extracts narrative (Cloud Run) | 🔒 Backend |
+| `GET /articles` | Sourced story listing with filters (Cloud Run) | 🌍 Public API |
+| `https://article-sourcing-1095070235711.us-central1.run.app` | Deployed Cloud Run story-sourcing service | 🌍 Public |
 
 ---
 

@@ -575,7 +575,7 @@ const Sauti = () => {
   return (
     <div
       className="fixed inset-0 flex flex-col items-center justify-center"
-      style={{ backgroundColor: "#091F1A" }}
+      className="bg-background text-white"
     >
       {/* Hidden video + canvas for vision capture */}
       <video ref={videoRef} autoPlay muted playsInline className="hidden" />
@@ -589,7 +589,7 @@ const Sauti = () => {
             onClick={() => setLang(l)}
             className={`rounded px-2.5 py-1 font-mono text-xs font-semibold uppercase transition-colors ${
               lang === l
-                ? "bg-[#C4871A] text-[#091F1A]"
+                ? "bg-primary text-[#091F1A]"
                 : "bg-white/10 text-white/50 hover:text-white/80"
             }`}
           >
@@ -624,7 +624,7 @@ const Sauti = () => {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               className="max-w-[400px] rounded-2xl p-8 text-center"
-              style={{ backgroundColor: "#0F3D34" }}
+              className="bg-forest-dk text-white"
             >
               <h2 className="mb-4 font-display text-lg font-semibold text-white">
                 {t("consentTitle")}
@@ -635,7 +635,7 @@ const Sauti = () => {
               <button
                 onClick={startSession}
                 className="w-full rounded-xl px-6 py-3 font-semibold transition-transform active:scale-95"
-                style={{ backgroundColor: "#C4871A", color: "#091F1A" }}
+                className="bg-primary text-primary-foreground rounded-xl"
               >
                 {t("consentBtn")}
               </button>
@@ -680,7 +680,7 @@ const Sauti = () => {
               className={`relative flex h-16 w-16 items-center justify-center rounded-full ${
                 state === "listening" ? "bg-emergency/20" :
                 state === "mic-error" ? "bg-emergency/10" :
-                "bg-[#C4871A]/15"
+                "bg-primary/15"
               }`}
             >
               {state === "listening" ? (
@@ -688,7 +688,7 @@ const Sauti = () => {
               ) : state === "mic-error" ? (
                 <MicOff className="h-8 w-8 text-emergency/60" />
               ) : (
-                <Mic className="h-8 w-8" style={{ color: "#C4871A" }} />
+                <Mic className="h-8 w-8 text-primary" />
               )}
             </span>
           </motion.button>
@@ -752,7 +752,7 @@ const Sauti = () => {
         {state === "idle" && (
           <div className="text-center">
             <p className="font-sans text-sm text-white/60">{t("tapToSpeak")}</p>
-            <p className="mt-1 font-mono text-xs" style={{ color: "#C4871A" }}>
+            <p className="mt-1 font-mono text-xs text-primary">
               Kiswahili coming soon
             </p>
           </div>
@@ -769,7 +769,7 @@ const Sauti = () => {
             <p className="font-sans text-xs text-white/60 whitespace-pre-line leading-relaxed mb-3">
               {t("micErrorBody")}
             </p>
-            <p className="font-sans text-xs" style={{ color: "#C4871A" }}>
+            <p className="font-sans text-xs text-primary">
               {t("tryAgain")}
             </p>
           </div>

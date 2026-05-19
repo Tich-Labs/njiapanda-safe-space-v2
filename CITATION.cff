@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Njiapanda — Paths to Safety"
+authors:
+  - name: "Nashe Toweett"
+    orcid: ""
+    affiliation: "Njiapanda"
+version: 0.1.0
+date-released: 2026-03-08
+license: MIT
+repository-code: "https://github.com/nashthecoder/njiapanda-support-kenya"
+abstract: "A community-led GBV survivor support platform for Kenya, powered by Google Gemini AI. Provides anonymous self-check, AI-powered storytelling, quiet help signals, safety planning, and resource directory for survivors of gender-based violence."
+keywords:
+  - "gender-based violence"
+  - "GBV"
+  - "survivor support"
+  - "Kenya"
+  - "Gemini AI"
+  - "trauma-informed"
+  - "digital public good"

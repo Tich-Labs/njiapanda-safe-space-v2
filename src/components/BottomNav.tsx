@@ -11,7 +11,6 @@ const primaryItems = [
 ];
 
 const moreItems = [
-  { icon: BookOpen, label: "Hadithi", path: "/hadithi" },
   { icon: MapPin, label: "Resources", path: "/resources" },
   { icon: Heart, label: "Why", path: "/why" },
   { icon: Handshake, label: "Join Us", path: "/join" },
@@ -46,7 +45,7 @@ const BottomNav = () => {
                     setShowMore(false);
                   }}
                   className={cn(
-                    "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors",
+                    "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card",
                     isActive
                       ? "bg-primary/10 text-primary font-semibold"
                       : "text-foreground hover:bg-muted"
@@ -80,13 +79,13 @@ const BottomNav = () => {
                 aria-label={label}
                 aria-current={isActive ? "page" : undefined}
                 className={cn(
-                  "flex min-h-[48px] min-w-[48px] flex-col items-center justify-center gap-0.5 px-3 py-1 text-xs transition-colors",
+                  "flex min-h-[52px] min-w-[52px] flex-col items-center justify-center gap-1 px-3 py-2 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card",
                   isActive ? "text-primary font-semibold" : "text-muted-foreground",
-                  isSauti && !isActive && "text-[#C4871A]"
+                  isSauti && !isActive && "text-primary/70"
                 )}
               >
                 <Icon className={cn("h-5 w-5", isActive && "stroke-[2.5]")} aria-hidden="true" />
-                <span className="text-[10px]">{label}</span>
+                <span className="text-[12px]">{label}</span>
               </button>
             );
           })}
@@ -96,12 +95,12 @@ const BottomNav = () => {
             onClick={() => setShowMore(!showMore)}
             aria-label="More options"
             className={cn(
-              "flex min-h-[48px] min-w-[48px] flex-col items-center justify-center gap-0.5 px-3 py-1 text-xs transition-colors",
+              "flex min-h-[48px] min-w-[48px] flex-col items-center justify-center gap-0.5 px-3 py-1 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card",
               isMoreActive || showMore ? "text-primary font-semibold" : "text-muted-foreground"
             )}
           >
             <MoreHorizontal className={cn("h-5 w-5", (isMoreActive || showMore) && "stroke-[2.5]")} aria-hidden="true" />
-            <span className="text-[10px]">More</span>
+            <span className="text-[12px]">More</span>
           </button>
         </div>
       </nav>

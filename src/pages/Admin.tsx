@@ -60,7 +60,7 @@ export default function Admin() {
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar */}
-      <aside className="flex w-56 shrink-0 flex-col border-r border-border bg-[hsl(30,15%,7%)] text-[hsl(36,20%,90%)]">
+      <aside className="flex w-56 shrink-0 flex-col border-r border-border bg-sidebar text-sidebar-foreground">
         <div className="flex items-center gap-2 border-b border-white/10 px-4 py-4">
           <Shield className="h-5 w-5 text-primary" />
           <span className="font-display text-base font-semibold">Njiapanda</span>
@@ -79,8 +79,8 @@ export default function Admin() {
                 tab === item.id
                   ? "bg-primary/20 text-primary"
                   : item.ready
-                  ? "text-[hsl(36,20%,70%)] hover:bg-white/5 hover:text-[hsl(36,20%,90%)]"
-                  : "cursor-not-allowed text-[hsl(36,20%,35%)]"
+                  ? "text-sidebar-foreground/70 hover:bg-white/5 hover:text-sidebar-foreground"
+                  : "cursor-not-allowed text-sidebar-foreground/30"
               }`}
             >
               <item.icon className="h-4 w-4" />
@@ -99,7 +99,7 @@ export default function Admin() {
             variant="ghost"
             size="sm"
             onClick={signOut}
-            className="w-full justify-start gap-2 text-[hsl(36,20%,60%)] hover:text-[hsl(36,20%,90%)]"
+            className="w-full justify-start gap-2 text-sidebar-foreground/60 hover:text-sidebar-foreground"
           >
             <LogOut className="h-4 w-4" />
             Sign Out

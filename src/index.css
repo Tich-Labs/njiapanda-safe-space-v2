@@ -5,15 +5,96 @@
 
 @layer base {
   :root {
-    /* ── Mapped from Njiapanda Design Tokens v1.0 ── */
+    /* ── Njiapanda Brand Theme (dark) — from hero PNG ── */
 
+    --background: 168 60% 6%;        /* #091F1A — deep forest */
+    --foreground: 36 20% 90%;        /* warm off-white */
+
+    --card: 168 45% 8%;              /* slightly lighter than bg */
+    --card-foreground: 36 20% 90%;
+
+    --popover: 168 45% 8%;
+    --popover-foreground: 36 20% 90%;
+
+    --primary: 38 77% 44%;           /* #C4871A — ochre/gold */
+    --primary-foreground: 168 60% 6%; /* deep forest */
+
+    --secondary: 168 45% 12%;        /* forest card bg */
+    --secondary-foreground: 36 20% 90%;
+
+    --muted: 168 30% 10%;
+    --muted-foreground: 26 8% 58%;
+
+    --accent: 38 40% 18%;            /* dark ochre bg */
+    --accent-foreground: 38 77% 63%; /* #E8B85A — light ochre */
+
+    --destructive: 5 55% 40%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 168 30% 15%;
+    --input: 168 30% 15%;
+    --ring: 38 77% 44%;              /* ochre */
+
+    --radius: 0.5rem;
+
+    --emergency: 5 55% 40%;
+    --emergency-foreground: 0 0% 100%;
+
+    --safe: 168 50% 36%;             /* #2D8A77 */
+    --safe-foreground: 0 0% 100%;
+
+    --warning: 37 80% 40%;
+    --warning-foreground: 0 0% 100%;
+
+    --info: 200 20% 45%;
+    --info-foreground: 0 0% 100%;
+
+    /* ── Extended palette ── */
+    --forest-dk: 168 61% 15%;        /* #0F3D34 */
+    --forest: 168 53% 24%;           /* #1C5C4F */
+    --forest-lt: 168 50% 36%;        /* #2D8A77 */
+    --forest-bg: 168 30% 12%;
+
+    --ochre-dk: 39 60% 30%;
+    --ochre: 38 77% 44%;             /* #C4871A */
+    --ochre-lt: 38 77% 63%;          /* #E8B85A */
+    --ochre-bg: 38 30% 12%;
+
+    --ink: 36 20% 90%;
+    --charcoal: 26 8% 58%;
+    --stone: 26 8% 48%;
+    --dust: 30 8% 22%;
+    --cream: 36 33% 95%;
+    --paper: 34 64% 97%;
+
+    --sidebar-background: 168 45% 8%;
+    --sidebar-foreground: 36 20% 90%;
+    --sidebar-primary: 38 77% 44%;
+    --sidebar-primary-foreground: 168 60% 6%;
+    --sidebar-accent: 168 30% 12%;
+    --sidebar-accent-foreground: 36 20% 90%;
+    --sidebar-border: 168 30% 15%;
+    --sidebar-ring: 38 77% 44%;
+
+    --font-display: 'Crimson Pro', Georgia, serif;
+    --font-body: 'DM Sans', system-ui, sans-serif;
+    --font-mono: 'DM Mono', 'Courier New', monospace;
+    --font-serif: 'IBM Plex Serif', Georgia, serif;
+
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+    --shadow-lg: 0 12px 40px rgba(0,0,0,0.5);
+  }
+
+  .light {
+    /* ── Light theme (alternative) ── */
     --background: 36 33% 95%;       /* cream #F7F3ED */
     --foreground: 30 18% 9%;        /* ink #1A1612 */
 
     --card: 34 64% 97%;             /* paper #FDFAF6 */
-    --card-foreground: 30 18% 9%;   /* ink */
+    --card-foreground: 30 18% 9%;
 
-    --popover: 34 64% 97%;          /* paper */
+    --popover: 34 64% 97%;
     --popover-foreground: 30 18% 9%;
 
     --primary: 168 53% 24%;         /* forest #1C5C4F */
@@ -22,34 +103,31 @@
     --secondary: 162 33% 94%;       /* forest-bg #EAF4F1 */
     --secondary-foreground: 168 61% 15%; /* forest-dk #0F3D34 */
 
-    --muted: 36 33% 95%;            /* cream */
-    --muted-foreground: 26 9% 44%;  /* stone #7A6E65 */
+    --muted: 36 33% 95%;
+    --muted-foreground: 26 9% 44%;
 
     --accent: 40 88% 95%;           /* ochre-bg #FDF6E8 */
     --accent-foreground: 39 82% 30%; /* ochre-dk #8A5C0E */
 
-    --destructive: 5 63% 46%;       /* emergency #C0392B */
+    --destructive: 5 63% 46%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 30 8% 69%;            /* dust #B8AFA6 */
-    --input: 30 8% 82%;             /* lighter dust */
-    --ring: 168 53% 24%;            /* forest */
+    --border: 30 8% 69%;
+    --input: 30 8% 82%;
+    --ring: 168 53% 24%;
 
-    --radius: 0.5rem;               /* 8px = radius-lg */
-
-    --emergency: 5 63% 46%;         /* #C0392B */
+    --emergency: 5 63% 46%;
     --emergency-foreground: 0 0% 100%;
 
-    --safe: 168 50% 36%;            /* #2D8A77 */
+    --safe: 168 50% 36%;
     --safe-foreground: 0 0% 100%;
 
-    --warning: 37 91% 44%;          /* #D4860A */
+    --warning: 37 91% 44%;
     --warning-foreground: 0 0% 100%;
 
-    --info: 200 20% 45%;            /* #5A7A8A */
+    --info: 200 20% 45%;
     --info-foreground: 0 0% 100%;
 
-    /* ── Extended palette ── */
     --forest-dk: 168 61% 15%;
     --forest: 168 53% 24%;
     --forest-lt: 168 50% 36%;
@@ -76,51 +154,9 @@
     --sidebar-border: 30 8% 69%;
     --sidebar-ring: 168 53% 24%;
 
-    --font-display: 'Crimson Pro', Georgia, serif;
-    --font-body: 'DM Sans', system-ui, sans-serif;
-    --font-mono: 'DM Mono', 'Courier New', monospace;
-    --font-serif: 'IBM Plex Serif', Georgia, serif;
-
-    /* ── Shadows ── */
     --shadow-sm: 0 1px 3px rgba(26,22,18,0.08);
     --shadow-md: 0 4px 16px rgba(26,22,18,0.12);
     --shadow-lg: 0 12px 40px rgba(26,22,18,0.16);
-  }
-
-  .dark {
-    --background: 30 15% 7%;
-    --foreground: 36 20% 90%;
-    --card: 30 12% 10%;
-    --card-foreground: 36 20% 90%;
-    --popover: 30 12% 10%;
-    --popover-foreground: 36 20% 90%;
-    --primary: 168 50% 36%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 168 30% 15%;
-    --secondary-foreground: 162 30% 88%;
-    --muted: 30 10% 14%;
-    --muted-foreground: 26 8% 58%;
-    --accent: 38 40% 18%;
-    --accent-foreground: 37 70% 70%;
-    --destructive: 5 55% 35%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 30 8% 22%;
-    --input: 30 8% 22%;
-    --ring: 168 50% 36%;
-    --emergency: 5 55% 40%;
-    --emergency-foreground: 0 0% 100%;
-    --safe: 168 45% 32%;
-    --safe-foreground: 0 0% 100%;
-    --warning: 37 80% 40%;
-    --warning-foreground: 0 0% 100%;
-    --sidebar-background: 30 12% 9%;
-    --sidebar-foreground: 36 20% 90%;
-    --sidebar-primary: 168 50% 36%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 168 30% 15%;
-    --sidebar-accent-foreground: 162 30% 88%;
-    --sidebar-border: 30 8% 22%;
-    --sidebar-ring: 168 50% 36%;
   }
 }
 

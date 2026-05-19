@@ -215,7 +215,7 @@ const Dashboard = () => {
                 onClick={() => setVoiceFilter(!voiceFilter)}
                 className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                   voiceFilter
-                    ? "bg-[#C4871A]/20 text-[#C4871A] ring-1 ring-[#C4871A]/40"
+                    ? "bg-primary/20 text-primary ring-1 ring-primary/40"
                     : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
                 }`}
               >
@@ -244,7 +244,7 @@ const Dashboard = () => {
                         <div className="mb-2 flex flex-wrap items-center gap-2">
                           <UrgencyBadge urgency={signal.urgency} />
                           {(signal as any).source === "sauti_voice" && (
-                            <span className="rounded-full bg-[#C4871A]/10 px-2 py-0.5 font-mono text-xs font-semibold text-[#C4871A]">
+                            <span className="rounded-full bg-primary/10 px-2 py-0.5 font-mono text-xs font-semibold text-primary">
                               🎙️ Voice
                             </span>
                           )}
@@ -258,7 +258,7 @@ const Dashboard = () => {
                           </span>
                         </div>
                         {(signal as any).source === "sauti_voice" && (
-                          <p className="mb-1 text-xs italic text-[#C4871A]/70">
+                          <p className="mb-1 text-xs italic text-primary/70">
                             Received via Sauti voice agent · Language: {(signal.language || "sw").toUpperCase()} · No audio stored
                           </p>
                         )}

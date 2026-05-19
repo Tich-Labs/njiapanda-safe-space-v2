@@ -1,11 +1,23 @@
 import { useState, useEffect, useRef } from "react";
-import { BookOpen, PenLine, Sparkles, Heart, ArrowLeft, X, Mic, Type, Loader2, SendHorizonal } from "lucide-react";
+import { BookOpen, PenLine, Sparkles, Heart, ArrowLeft, X, Mic, Type, Loader2, SendHorizonal, Globe, RefreshCw, Link } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Textarea } from "@/components/ui/textarea";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getStories, addStory, incrementResonance } from "@/lib/localStories";
+import type { LocalStory } from "@/lib/localStories";
+import { fetchArticles, triggerArticleSearch, ingestStoryUrl } from "@/lib/articleService";
+
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/\*{1,2}([^*]+)\*{1,2}/g, "$1")
+    .replace(/_{1,2}([^_]+)_{1,2}/g, "$1")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/~~([^~]+)~~/g, "$1")
+    .replace(/^[#]+\s*/gm, "")
+    .trim();
+}
 import StoryBlock, { StoryBlockType } from "@/components/hadithi/StoryBlock";
 import AudioRecorder from "@/components/AudioRecorder";
 
@@ -47,6 +59,7 @@ const Hadithi = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("");
   const [expandedStory, setExpandedStory] = useState<any>(null);
+  const [urlInput, setUrlInput] = useState("");
   
   // Share tab state
   const [shareText, setShareText] = useState("");
@@ -74,21 +87,26 @@ const Hadithi = () => {
     const fetchStories = async () => {
       setLoading(true);
       
-      // Use local storage for stories (no backend needed)
-      let sorted = getStories("approved");
+      let local = getStories("approved");
       
-      // If user recently generated a story type, boost matching stories to top
+      let sourced: LocalStory[] = [];
+      try {
+        sourced = await fetchArticles({ limit: 50 });
+      } catch {}
+      
+      let stories = [...sourced, ...local];
+      
       const recentType = sessionStorage.getItem("hadithi-last-type");
-      if (recentType && sorted.length > 0) {
-        const matching = sorted.filter(s => 
+      if (recentType && stories.length > 0) {
+        const matching = stories.filter(s => 
           s.abuse_type?.toLowerCase().includes(recentType.toLowerCase()) ||
           s.tags?.some((t: string) => t.toLowerCase().includes(recentType.toLowerCase()))
         );
-        const rest = sorted.filter(s => !matching.includes(s));
-        sorted = [...matching, ...rest];
+        const rest = stories.filter(s => !matching.includes(s));
+        stories = [...matching, ...rest];
       }
       
-      setStories(sorted);
+      setStories(stories);
       setLoading(false);
     };
     if (activeTab === "read") fetchStories();
@@ -192,15 +210,22 @@ const Hadithi = () => {
       const systemPrompt = `You are a trauma-informed awareness storyteller about gender-based violence in East Africa.
 
 IMPORTANT RULES:
-- Use these EXACT character details: protagonist is ${protagonist}, the abuser is ${relationship} named ${abuser}, set in ${location} near a ${setting}.
+- Use these EXACT character details: protagonist is ${protagonist}, the abuser is ${relationship} named ${abuser}, set in ${effectiveLocation} near a ${setting}.
 - ${perspective === "first-person" ? `Write in first person as ${protagonist}.` : `Write in third person about ${protagonist}.`}
 - The story must focus on: ${generateAbuseType}.
 - Write 6-8 paragraphs. Show how the abuse develops gradually.
 - End by gently naming what happened and showing courage.
 - Use culturally specific East African details.
+- USE SIMPLE ENGLISH ONLY. Avoid big words like "encroachment", "imperceptible", "perpetrator", "trauma", "survivor". Use everyday words a teenager would understand.
+- Do NOT use any Swahili or other local language words.
+- Keep sentences short. Use words like: hurt, fear, control, help, alone, brave, change.
+- Do NOT use any markdown formatting like asterisks, bold, or italics. Write plain text only.
 - At the very end, add: "⚠️ This story is fictional and created for awareness purposes only."`;
 
       const isGenericStart = prompt.trim().length < 10;
+      const effectiveLocation = isGenericStart 
+        ? location 
+        : prompt.trim().split(/[,.]/)[0]?.trim() || location;
       const userPrompt = isGenericStart 
         ? `Tell me a story about ${generateAbuseType} set in ${location}`
         : `${generateAbuseType}: ${prompt.trim()}`;
@@ -248,7 +273,7 @@ IMPORTANT RULES:
       const paragraphs = storyText.split(/\n\n+/).filter(p => p.trim());
       
       for (const para of paragraphs) {
-        setBlocks(prev => [...prev, { id: crypto.randomUUID(), type: "text", content: para.trim() }]);
+        setBlocks(prev => [...prev, { id: crypto.randomUUID(), type: "text", content: stripMarkdown(para.trim()) }]);
       }
 
       setDone(true);
@@ -285,7 +310,7 @@ IMPORTANT RULES:
 
 
   return (
-    <div className="min-h-screen pb-24" style={{ backgroundColor: "#091F1A" }}>
+    <div className="min-h-screen pb-24 bg-background text-white">
       {/* Header */}
       <div className="text-center py-6 px-4">
         <button onClick={() => navigate(-1)} className="absolute left-4 top-6 text-white/40">
@@ -298,7 +323,7 @@ IMPORTANT RULES:
       </div>
 
       {/* Tab bar */}
-      <div className="flex justify-center border-b border-white/10 px-4 gap-1 sticky top-0 z-10" style={{ backgroundColor: "#091F1A" }}>
+      <div className="flex justify-center border-b border-white/10 px-4 gap-1 sticky top-0 z-10 bg-background text-white">
         {[
           { id: "read", label: "Read stories", icon: BookOpen },
           { id: "share", label: "Share yours", icon: PenLine },
@@ -309,7 +334,7 @@ IMPORTANT RULES:
             onClick={() => setActiveTab(tab.id as HadithiTab)}
             className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-all -mb-px ${
               activeTab === tab.id
-                ? "border-[#C4871A] text-[#C4871A]"
+                ? "border-primary text-primary"
                 : "border-transparent text-white/40 hover:text-white/60"
             }`}
           >
@@ -331,12 +356,12 @@ IMPORTANT RULES:
                 placeholder="Search stories..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white/80 text-sm placeholder-white/30 focus:outline-none focus:border-[#C4871A]/50"
+                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white/80 text-sm placeholder-white/30 focus:outline-none focus:border-primary/50"
               />
               <select
                 value={filterType}
                 onChange={e => setFilterType(e.target.value)}
-                className="bg-[#0F3D34] border border-white/20 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-[#C4871A]/50 min-w-[140px]"
+                className="bg-[#0F3D34] border border-white/20 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-primary/50 min-w-[140px]"
                 style={{ backgroundColor: "#0F3D34", color: "white" }}
               >
                 <option value="" style={{ backgroundColor: "#0F3D34", color: "white" }}>All types</option>
@@ -344,6 +369,64 @@ IMPORTANT RULES:
                   <option key={t} value={t} style={{ backgroundColor: "#0F3D34", color: "white" }}>{t}</option>
                 ))}
               </select>
+              <button
+                onClick={async () => {
+                  toast.info("Searching for survivor stories...");
+                  try {
+                    const result = await triggerArticleSearch({
+                      query: filterType ? `GBV survivor personal story ${filterType}` : "gender-based violence survivor personal story Africa",
+                      abuse_type: filterType || undefined,
+                    });
+                    if (result.success) {
+                      toast.success(`Found ${result.articles_count || 0} new survivor stories`);
+                      window.location.reload();
+                    } else {
+                      toast.error(result.error || "Failed to find stories");
+                    }
+                  } catch (err: any) {
+                    toast.error(err.message || "Failed to find stories");
+                  }
+                }}
+                title="Discover survivor stories from the web"
+                className="bg-primary/20 border border-primary/30 rounded-xl px-3 py-2 text-primary hover:bg-primary/30 transition-colors shrink-0"
+              >
+                <RefreshCw className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Submit a story link */}
+            <div className="flex gap-2 px-4">
+              <input
+                type="url"
+                placeholder="Paste a link to a survivor story (UNFPA, UNHCR, etc.)"
+                value={urlInput}
+                onChange={e => setUrlInput(e.target.value)}
+                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white/80 text-sm placeholder-white/30 focus:outline-none focus:border-primary/50"
+              />
+              <button
+                onClick={async () => {
+                  const url = urlInput.trim();
+                  if (!url) { toast.error("Please paste a story URL"); return; }
+                  toast.info("Fetching survivor story...");
+                  try {
+                    const result = await ingestStoryUrl({ url, abuse_type: filterType || undefined });
+                    if (result.success) {
+                      toast.success("Story added!");
+                      setUrlInput("");
+                      window.location.reload();
+                    } else {
+                      toast.error(result.error || "Failed to add story");
+                    }
+                  } catch (err: any) {
+                    toast.error(err.message || "Failed to add story");
+                  }
+                }}
+                disabled={!urlInput.trim()}
+                title="Submit a story link"
+                className="bg-primary/20 border border-primary/30 rounded-xl px-3 py-2 text-primary hover:bg-primary/30 transition-colors shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Link className="h-4 w-4" />
+              </button>
             </div>
 
             {/* Stories List */}
@@ -364,23 +447,37 @@ IMPORTANT RULES:
                       <Sparkles className="h-3 w-3" /> AI generated
                     </span>
                   )}
+                  {story.source_type === "sourced_story" && (
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-blue-500/20 text-blue-300 border border-blue-500/30">
+                        <Globe className="h-3 w-3" /> {story.source_name || "Survivor story"}
+                      </span>
+                      {story.location && (
+                        <span className="text-xs text-white/40">
+                          📍 {story.location}
+                        </span>
+                      )}
+                    </div>
+                  )}
                   
                   <h3 className="font-display text-white font-semibold mb-2">{story.title || "Untitled"}</h3>
-                  <p className="text-white/60 text-sm leading-relaxed line-clamp-4">{story.text}</p>
+                  <p className="text-white/60 text-sm leading-relaxed line-clamp-4">
+                    {stripMarkdown(story.summary || story.text)}
+                  </p>
                   
                   <div className="flex items-center justify-between mt-4">
                     <span className="text-xs text-white/30 capitalize">{story.abuse_type || "Other"}</span>
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleResonance(story.id)}
-                        className="flex items-center gap-1 text-xs text-white/40 hover:text-[#C4871A] transition-colors"
+                        className="flex items-center gap-1 text-xs text-white/40 hover:text-primary transition-colors"
                       >
                         <Heart className="h-3 w-3" />
                         {story.resonance_count || 0}
                       </button>
                       <button
                         onClick={() => setExpandedStory(story)}
-                        className="text-xs text-[#C4871A]/70 hover:text-[#C4871A]"
+                        className="text-xs text-primary/70 hover:text-primary"
                       >
                         Read more
                       </button>
@@ -404,7 +501,7 @@ IMPORTANT RULES:
                 <select
                   value={shareAbuseType}
                   onChange={e => setShareAbuseType(e.target.value)}
-                  className="w-full bg-[#0F3D34] border border-white/20 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#C4871A]/50"
+                  className="w-full bg-[#0F3D34] border border-white/20 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-primary/50"
                   style={{ backgroundColor: "#0F3D34", color: "white" }}
                 >
                   <option value="" style={{ backgroundColor: "#0F3D34", color: "white" }}>Select type of abuse to begin</option>
@@ -418,7 +515,7 @@ IMPORTANT RULES:
                 {/* Abuse type badge + change */}
                 <div className="flex items-center justify-between px-4 py-2 border-b border-white/10">
                   <span className="text-xs text-white/40">
-                    Topic: <span className="text-[#C4871A]">{shareAbuseType}</span>
+                    Topic: <span className="text-primary">{shareAbuseType}</span>
                   </span>
                   <button
                     onClick={() => { setShareAbuseType(""); setChatMessages([]); setShareText(""); }}
@@ -450,11 +547,11 @@ IMPORTANT RULES:
                       className={`rounded-2xl px-4 py-3 text-sm leading-relaxed max-w-[85%] ${
                         msg.role === "user"
                           ? "bg-white/10 text-white/80 ml-auto"
-                          : "bg-[#C4871A]/10 border border-[#C4871A]/20 text-white/70 mr-auto"
+                          : "bg-primary/10 border border-primary/20 text-white/70 mr-auto"
                       }`}
                     >
                       {msg.role === "assistant" && (
-                        <span className="block text-[10px] uppercase tracking-wider text-[#C4871A]/60 mb-1">Hadithi</span>
+                        <span className="block text-[10px] uppercase tracking-wider text-primary/60 mb-1">Hadithi</span>
                       )}
                       {msg.content}
                     </motion.div>
@@ -462,7 +559,7 @@ IMPORTANT RULES:
 
                   {aiLoading && (
                     <div className="flex items-center gap-2 py-2">
-                      <Loader2 className="h-4 w-4 animate-spin text-[#C4871A]" />
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
                       <span className="text-sm text-white/50">Thinking…</span>
                     </div>
                   )}
@@ -481,14 +578,14 @@ IMPORTANT RULES:
                 )}
 
                 {/* Bottom input area — pinned */}
-                <div className="border-t border-white/10 px-4 py-3 space-y-2" style={{ backgroundColor: "#091F1A" }}>
+                <div className="border-t border-white/10 px-4 py-3 space-y-2 bg-background text-white">
                   {/* Input mode toggle */}
                   <div className="flex gap-2">
                     <button
                       onClick={() => setShareInputMode("text")}
                       className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs transition-colors ${
                         shareInputMode === "text"
-                          ? "bg-[#C4871A] text-[#091F1A]"
+                          ? "bg-primary text-[#091F1A]"
                           : "bg-white/10 text-white/50 hover:bg-white/15"
                       }`}
                     >
@@ -500,7 +597,7 @@ IMPORTANT RULES:
                       onClick={() => setShareInputMode("audio")}
                       className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs transition-colors ${
                         shareInputMode === "audio"
-                          ? "bg-[#C4871A] text-[#091F1A]"
+                          ? "bg-primary text-[#091F1A]"
                           : "bg-white/10 text-white/50 hover:bg-white/15"
                       }`}
                     >
@@ -513,7 +610,7 @@ IMPORTANT RULES:
                     <button
                       onClick={handleShareStory}
                       disabled={(!shareText.trim() && chatMessages.length === 0) || sharing}
-                      className="bg-[#C4871A] text-[#091F1A] font-semibold rounded-lg px-4 py-1.5 text-xs disabled:opacity-40 transition-all active:scale-95"
+                      className="bg-primary text-[#091F1A] font-semibold rounded-lg px-4 py-1.5 text-xs disabled:opacity-40 transition-all active:scale-95"
                     >
                       {sharing ? "…" : "Submit"}
                     </button>
@@ -539,7 +636,7 @@ IMPORTANT RULES:
                         }}
                         placeholder="Tell us what happened…"
                         rows={2}
-                        className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white/80 text-sm resize-none focus:outline-none focus:border-[#C4871A]/50 placeholder-white/20"
+                        className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white/80 text-sm resize-none focus:outline-none focus:border-primary/50 placeholder-white/20"
                       />
                       <button
                         onClick={() => {
@@ -549,7 +646,7 @@ IMPORTANT RULES:
                           }
                         }}
                         disabled={!shareText.trim() || aiLoading}
-                        className="self-end bg-[#C4871A] hover:bg-[#C4871A]/80 text-[#091F1A] rounded-xl p-3 disabled:opacity-30 transition-colors"
+                        className="self-end bg-primary hover:bg-primary/80 text-[#091F1A] rounded-xl p-3 disabled:opacity-30 transition-colors"
                         aria-label="Send message"
                       >
                         <SendHorizonal className="h-4 w-4" />
@@ -572,7 +669,7 @@ IMPORTANT RULES:
               ))}
               {generating && (
                 <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-[#C4871A] animate-pulse" />
+                  <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
                   <span className="text-sm text-white/50">Generating...</span>
                 </div>
               )}
@@ -586,7 +683,7 @@ IMPORTANT RULES:
             <select
               value={generateAbuseType}
               onChange={e => setGenerateAbuseType(e.target.value)}
-              className="w-full bg-[#0F3D34] border border-white/20 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-[#C4871A]/50"
+              className="w-full bg-[#0F3D34] border border-white/20 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-primary/50"
               style={{ backgroundColor: "#0F3D34", color: "white" }}
             >
               <option value="" style={{ backgroundColor: "#0F3D34", color: "white" }}>Select type of abuse (required)</option>
@@ -613,7 +710,7 @@ IMPORTANT RULES:
                   disabled={generating}
                   className={`flex-1 rounded-lg px-3 py-2.5 text-sm transition-colors ${
                     format === f.id
-                      ? "bg-[#C4871A] text-[#091F1A]"
+                      ? "bg-primary text-[#091F1A]"
                       : "bg-white/10 text-white/60 hover:bg-white/15 disabled:opacity-40"
                   }`}
                 >
@@ -626,7 +723,7 @@ IMPORTANT RULES:
             <button
               onClick={startGeneration}
               disabled={!prompt.trim() || !generateAbuseType || generating || retryAfter > 0}
-              className="w-full bg-[#C4871A] text-[#091F1A] font-semibold rounded-xl py-3 disabled:opacity-40 transition-all active:scale-95"
+              className="w-full bg-primary text-[#091F1A] font-semibold rounded-xl py-3 disabled:opacity-40 transition-all active:scale-95"
             >
               {generating ? "Generating..." : retryAfter > 0 ? `Wait ${retryAfter}s...` : "Generate Story"}
             </button>
@@ -715,8 +812,8 @@ IMPORTANT RULES:
               initial={{ y: "100%" }}
               animate={{ y: 0 }}
               exit={{ y: "100%" }}
-              className="w-full max-w-lg rounded-t-2xl p-6 max-h-[80vh] overflow-y-auto"
-              style={{ backgroundColor: "#0F3D34" }}
+              className="w-full max-w-lg rounded-t-2xl pt-6 px-6 pb-28 max-h-[80vh] overflow-y-auto"
+              className="bg-forest-dk text-white"
               onClick={e => e.stopPropagation()}
             >
               <div className="flex justify-between items-start mb-4">
@@ -725,11 +822,42 @@ IMPORTANT RULES:
                   <X className="h-5 w-5" />
                 </button>
               </div>
-              <p className="text-white/70 text-sm leading-relaxed whitespace-pre-wrap">{expandedStory.text}</p>
-              <div className="mt-6 pt-4 border-t border-white/10">
+
+              {expandedStory.source_type === "sourced_story" && (
+                <div className="mb-4 space-y-2 p-3 rounded-xl bg-white/5 border border-white/10">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Globe className="h-4 w-4 text-blue-400" />
+                    <span className="text-blue-300 font-medium">{expandedStory.source_name}</span>
+                  </div>
+                  {expandedStory.location && (
+                    <p className="text-xs text-white/40">📍 {expandedStory.location}</p>
+                  )}
+                  {expandedStory.source_url && (
+                    <a
+                      href={expandedStory.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 underline underline-offset-2"
+                    >
+                      Read original story ↗
+                    </a>
+                  )}
+                </div>
+              )}
+
+              <p className="text-white/70 text-sm leading-relaxed whitespace-pre-wrap">
+                {stripMarkdown(expandedStory.summary || expandedStory.text)}
+              </p>
+
+              <div className="mt-6 pt-4 border-t border-white/10 space-y-3">
+                {expandedStory.source_type === "sourced_story" && (
+                  <p className="text-xs text-white/30 italic text-center">
+                    This story is shared with permission from the publisher. If you or someone you know needs support, help is available.
+                  </p>
+                )}
                 <button
                   onClick={() => navigate("/signal")}
-                  className="w-full bg-[#C4871A] text-[#091F1A] font-semibold rounded-xl py-3"
+                  className="w-full bg-primary text-[#091F1A] font-semibold rounded-xl py-3"
                 >
                   I need help
                 </button>

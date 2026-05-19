@@ -1,5 +1,6 @@
 // Simple local storage for stories - no backend needed
 // Uses localStorage for demo, replace with Firebase in production
+// Sourced articles are stored in MongoDB via MCP (see lib/mcpClient.ts)
 
 export interface LocalStory {
   id: string;
@@ -7,11 +8,17 @@ export interface LocalStory {
   title: string;
   language: string;
   status: string;
-  source: string;
+  source: string; // "hadithi_ai" | "user_submission" | "sourced_article"
   abuse_type?: string;
   tags?: string[];
   resonance_count: number;
   created_at: string;
+  // Sourced article fields
+  source_type?: string;       // "sourced_article" for differentiation
+  source_url?: string;        // Original article URL
+  source_name?: string;       // Publication name e.g. "The Standard"
+  location?: string;          // e.g. "Nairobi, Kenya"
+  summary?: string;           // Short summary for card preview
 }
 
 const STORAGE_KEY = "hadithi_stories";

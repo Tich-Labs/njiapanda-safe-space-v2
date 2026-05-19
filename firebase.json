@@ -34,6 +34,11 @@
       "source": "firebase/functions/sauti-gateway",
       "codebase": "sauti-gateway",
       "ignore": ["node_modules", "firebase.json"]
+    },
+    {
+      "source": "firebase/functions/sourced-articles",
+      "codebase": "sourced-articles",
+      "ignore": ["node_modules", "firebase.json"]
     }
   ]
 }

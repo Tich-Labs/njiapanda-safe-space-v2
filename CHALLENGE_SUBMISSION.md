@@ -1,4 +1,4 @@
-# ✅ Gemini Live Agent Challenge — Njiapanda Submission Checklist
+# ✅ Google Gemini Agent Challenge — Njiapanda Submission Checklist
 
 **Project:** Njiapanda — Paths to Safety
 **Live URL:** [njiapanda-v2.web.app](https://njiapanda-v2.web.app)
@@ -7,17 +7,22 @@
 
 ---
 
-## 1️⃣ Category Selection
+## 1️⃣ Partner Track Selection
 
 | Requirement | Status | Evidence |
 |---|---|---|
-| Selected one category | ✅ | **Creative Storyteller** (primary) — Hadithi multimodal storytelling |
-| Project fits the category's focus | ✅ | Hadithi generates interleaved text + AI-generated illustrations as awareness narratives |
-| Project uses multimodal inputs or outputs | ✅ | Text + image output (Hadithi Generate), text + audio input (Hadithi Share/ShareStory) |
+| Selected partner track | ✅ | **MongoDB Partner Bucket** |
+| Meaningful MCP integration | ✅ | Hadithi agent uses MongoDB MCP server tools for article sourcing, storage, and retrieval |
+| MCP gives agent "superpowers" | ✅ | MongoDB MCP enables: semantic search across sourced articles, geolocation-filtered queries, full-text search, and persistent article storage |
 
-### Categories Covered
+### Why MongoDB
 
-- **✅ Creative Storyteller (primary)** — Hadithi generates first-person awareness narratives that weave together text and AI-generated watercolour illustrations using Gemini 2.5 Flash + Gemini 3.1 Flash Image Preview
+MongoDB MCP server provides 24 database tools + 13 Atlas management tools that the Hadithi agent uses to:
+1. **`insertMany`** — Store sourced SGBV articles with full metadata (source, location, abuse type)
+2. **`find`** — Retrieve articles by abuse type, location, or keyword search
+3. **`aggregate`** — Complex filtering and sorted queries for the Read Stories feed
+4. **`createIndex`** — Enable full-text and future vector search across article content
+5. **`listCollections`** — Discover available data sources within the agent workflow
 
 ---
 
@@ -27,101 +32,122 @@
 
 | Requirement | Status | Evidence |
 |---|---|---|
-| Uses a Gemini model | ✅ | 7 different Gemini models used (see table below) |
-| Uses Google GenAI SDK OR ADK | ✅ | Google GenAI SDK (Hadithi Generate), Firebase Cloud Functions, Vertex AI + ADK |
-| Implements agent logic | ✅ | Hadithi: story generation with character diversity, abuse type detection, culturally-specific narratives. Dashboard: AI risk assessment. |
+| Uses a Gemini model | ✅ | 5+ Gemini models used (see table below) |
+| Uses Google GenAI SDK OR ADK | ✅ | Google GenAI SDK, Firebase Cloud Functions, Vertex AI + ADK |
+| Implements agent logic | ✅ | Article sourcing agent: web search → Gemini parse → MongoDB MCP store. Hadithi: story generation with character diversity. Dashboard: AI risk assessment. |
+
+### Partner MCP Integration
+
+| Requirement | Status | Evidence |
+|---|---|---|
+| MongoDB MCP server configured | ✅ | `MCP_SETUP.md` with full configuration, `.mongodb-mcp.json` config, environment variables |
+| Agent uses MCP tools | ✅ | `gcp-functions/article-sourcing/main.py` — agent uses search, parse, and MongoDB operations |
+| MCP integration is meaningful | ✅ | Enables a new feature: real-world SGBV article aggregation with full attribution, directly in the Read Stories experience |
+| MCP demo script provided | ✅ | `scripts/mongodb-mcp-demo.js` — runnable demo showing all MCP tools in action |
 
 ### Google Cloud
 
 | Requirement | Status | Evidence |
-|---|---|---|
-| Backend runs on Google Cloud | ✅ | Gemini API via Google AI Studio|
-| Uses at least one Google Cloud service | ✅ | See list below |
-| Agent is hosted on Google Cloud | ✅  Gemini API (all AI features) |
+|---|---|---|---|
+| Backend runs on Google Cloud | ✅ | Cloud Run (article-sourcing) + Firebase Cloud Functions + Gemini API |
+| Uses at least one Google Cloud service | ✅ | Cloud Run (agent backend), Gemini API (AI), Firebase Hosting (CDN) |
+| Agent is hosted on Google Cloud | ✅ | GCP Cloud Run (article-sourcing, sauti-agent) |
+| GCP billing credit applied | ✅ | $100 credit received and active on billing account — confirmed in GCP Billing console |
 
 ### Google Cloud Services Used
 
-| Service | Usage |
-|---|---|
-| ** Google AI Studio** | Gemini 2.5 Flash for story generation, Gemini 3.1 Flash Image Preview for illustrations |
-| **Cloud Run** | Hadithi Agent backend (FastAPI + Google ADK) |
-| **Gemini API** (via Firebase Cloud Functions) | 6 Firebase Cloud Functions calling Gemini models for storytelling, moderation, transcription, risk assessment, image generation |
+| Service | Usage | URL |
+|---|---|---|
+| **Google AI Studio / Gemini API** | Gemini 2.5 Flash for story generation + article sourcing | `ai.google.dev` |
+| **Cloud Run** | Article sourcing agent (FastAPI + Gemini + MongoDB MCP) | `https://article-sourcing-1095070235711.us-central1.run.app` |
+| **Firebase Hosting** | Frontend static assets, PWA, global CDN | `njiapanda-v2.web.app` |
+| **Cloud Run** | Hadithi Agent backend (FastAPI + Google ADK) | — |
+| **GCP Billing** | $100 credit linked to project `njipanda-sauti` via billing account `TichLabs` | ✅ Active |
 
 ### Gemini Models Used
 
 | Model | Function | Purpose |
 |---|---|---|
-| `google/gemini-2.5-flash` | Hadithi Generate | AI awareness story generation with trauma-informed prompts |
-| `google/gemini-2.5-flash` | `story-deepen` | Chat-style AI follow-up questions for survivors |
-| `google/gemini-2.5-flash-lite` | `moderate-story` | Content safety screening for story submissions |
-| `google/gemini-3-flash-preview` | `ai-brief` | Structured risk assessment briefs for conductors |
-| `google/gemini-3.1-flash-image-preview` | Hadithi Generate | AI-generated watercolour illustrations for stories |
+| `gemini-2.5-flash` | Article sourcing agent | Searches web for SGBV articles, parses content, extracts metadata |
+| `gemini-2.5-flash` | Hadithi Generate | AI awareness story generation with trauma-informed prompts |
+| `gemini-2.5-flash` | Story deepening | Chat-style AI follow-up questions for survivors |
+| `gemini-2.5-flash-lite` | Content moderation | Safety screening for story submissions |
+| `gemini-3-flash-preview` | Risk assessment | Structured risk briefs for conductors |
+| `gemini-3.1-flash-image-preview` | Illustrations | AI-generated watercolour illustrations for stories |
 
 ---
 
-## 3️⃣ Category-Specific Requirements
-
-### ✅ Creative Storyteller (Primary Focus)
-
-| Requirement | Status | Evidence |
-|---|---|---|
-| Uses Gemini interleaved / mixed output | ✅ | Hadithi Generate produces text + image blocks (via Gemini 2.5 Flash + 3.1 Flash Image Preview) |
-| Produces multiple media types together | ✅ | Text paragraphs + AI-generated watercolour illustrations |
-| Text + images | ✅ | Stories include narrative text interleaved with contextual illustrations |
-| Story + generated illustrations | ✅ | Gemini 2.5 Flash (text) + Gemini 3.1 Flash Image Preview (images) |
-
-**Code evidence:**
-- `src/pages/Hadithi.tsx` — Three-tab interface (Read, Share chat, Generate illustrated) using Google GenAI SDK
-- `src/components/hadithi/StoryBlock.tsx` — Renders text and image blocks
-- `firebase/functions/hadithi-stream/index.js` — SSE streaming with image generation pipeline
-
----
-
-## 4️⃣ Core Project Features
+## 3️⃣ Core Project Features
 
 | Requirement | Status | Evidence |
 |---|---|---|
 | User interface works | ✅ | Mobile-first React PWA at [njiapanda-v2.web.app](https://njiapanda-v2.web.app) |
-| Agent processes multimodal input | ✅ | Hadithi Generate: text prompts; Hadithi Share: text + voice recording; Share Story: text + audio transcription |
-| Agent generates useful output | ✅ | Hadithi: illustrated awareness stories; Dashboard: structured risk briefs |
-| Agent demonstrates autonomous behavior | ✅ | Hadithi: character diversity + abuse type detection + culturally-specific narratives; AI brief: autonomous risk level assessment |
-| Agent solves a real problem | ✅ | Helps GBV survivors in Kenya recognise abuse through stories before they're ready to seek help |
+| Agent processes multimodal input | ✅ | Text prompts, voice recording, web article search |
+| Agent generates useful output | ✅ | Sourced articles, illustrated awareness stories, structured risk briefs |
+| Agent demonstrates autonomous behavior | ✅ | Article sourcing agent: independently searches web, parses, and stores via MCP |
+| Agent solves a real problem | ✅ | Helps GBV survivors recognise abuse through stories + real reporting |
+| Partner MCP integration functional | ✅ | MongoDB MCP server stores/retrieves articles with full attribution |
+| Multi-step mission handling | ✅ | Sourcing agent: search → Gemini parse → validate → MongoDB MCP `insertMany` → frontend `find` |
+
+### Key Agent Behaviours
+
+1. **Article Sourcing Agent** — Triggered by user or scheduled. Searches web for SGBV/tech-GBV articles in Africa, parses with Gemini, validates, stores via MongoDB MCP tools, and surfaces in the Read Stories feed with full source attribution.
+
+2. **Hadithi Story Generation** — Creates interleaved text + illustration awareness narratives with culturally-specific Kenyan characters, locations, and scenarios.
+
+3. **Conductor Risk Assessment** — Automatically assesses incoming help signals and generates structured risk briefs.
 
 ---
 
-## 4b️⃣ The Intervention: Why Multimodal Storytelling
+## 4️⃣ Sourced Articles — MongoDB MCP Feature
 
-### The Problem
-Most GBV support tools are built for people who already know they need help. They assume a survivor who can name what is happening to them, who has decided to act, who is ready to call a number or fill in a form.
+### The Feature
 
-Those tools are important. But they miss the largest group of all — people who are not yet sure. People who are still asking themselves whether what they are experiencing is real, whether it counts, whether they are overreacting.
+The Hadithi agent continuously sources real SGBV and technology-facilitated GBV articles from African news publications. These articles appear in the existing **Read Stories** tab on `/hadithi`, alongside user-submitted and AI-generated stories.
 
-No hotline reaches that person. No form. No resource directory.
+### Data Model
 
-**A story can.**
+```typescript
+interface SourcedArticle {
+  title: string;
+  summary: string;
+  text: string;
+  source_url: string;      // Original article URL
+  source_name: string;     // e.g. "The Standard", "BBC News"
+  location: string;        // e.g. "Nairobi, Kenya"
+  abuse_type: string;      // Physical, Sexual, Digital Surveillance, etc.
+  tags: string[];
+  source: "sourced_article";
+}
+```
 
-### The Solution
-Hadithi uses Gemini's interleaved multimodal output to generate first-person awareness narratives that weave together text and AI-generated illustrations in a single fluid stream. A user types a situation — "my partner controls all the money" or "I feel watched all the time" — and receives a story about a fictional character experiencing that same pattern of abuse.
+### MCP Integration Flow
 
-The fictional frame is not a limitation. It is the feature.
+```
+User clicks "Source articles" in Read Stories tab
+  → Cloud Run — article-sourcing agent (POST /search-and-ingest)
+    → Gemini 2.5 Flash: searches web, parses articles
+    → Validates and sanitises article data
+    → MongoDB MCP: insertMany() stores articles
+  → Frontend refreshes list
+    → Cloud Run — article-sourcing agent (GET /articles)
+    → MongoDB MCP: find() retrieves articles
+    → Displayed with source badge + location tag + "Read original" link
+```
 
-When someone reads about Amina in Nairobi whose partner slowly cut her off from her friends, they are not being asked to label their own experience. They are just reading. But if the story resonates — if they think "that sounds exactly like my life" — that recognition is their own. Nobody told them. They arrived at it themselves.
+### Evidence in Code
 
-**That moment of recognition is the intervention.** It is what makes every other feature on the platform reachable — the help signal, the resource directory. Without it, those features exist for people who are already halfway to safety. With it, Njiapanda reaches people at the very beginning.
-
-### Why Interleaved Multimodal Output Specifically
-A text-only story is easy to read past. The combination of prose arriving sentence by sentence and an illustration fading in at the emotional peak of a paragraph creates an experience that is harder to dismiss.
-
-The multimodal stream does not just tell the story — it makes it felt.
-
-This is why we used Gemini's native interleaved output rather than generating text and images as separate calls. The stream arrives as one cohesive experience. The illustration appears exactly when the narrative reaches the moment it depicts. **The timing is the point.**
-
-### The Loop
-When a story finishes generating, it is automatically saved to the community stories library with the user's trigger keyword as a tag. An admin reviews and approves it. It then appears in the Read tab where other survivors can find it, read it, and click "This sounds familiar."
-
-A story generated by one person's experience becomes the story that helps someone else name theirs. The AI creates the first version. The community carries it forward.
-
-This is what Gemini's Creative Storyteller capability makes possible in a context where it genuinely matters.
+| File | Purpose |
+|---|---|
+| `src/lib/articleService.ts` | Frontend client for article API |
+| `src/lib/localStories.ts` | Extended `LocalStory` with `source_url`, `source_name`, `location`, `summary` |
+| `src/pages/Hadithi.tsx` | Updated Read Stories tab — merged feed + source badges + attribution |
+| `gcp-functions/article-sourcing/main.py` | Cloud Run agent: FastAPI service with search-and-ingest + article API |
+| `gcp-functions/article-sourcing/Dockerfile` | Cloud Run container config |
+| `gcp-functions/article-sourcing/requirements.txt` | Python dependencies |
+| `scripts/mongodb-mcp-demo.js` | Runnable MCP integration demo |
+| `MCP_SETUP.md` | Full setup and configuration guide |
+| `.env.example` | MongoDB environment variables |
 
 ---
 
@@ -133,93 +159,94 @@ This is what Gemini's Creative Storyteller capability makes possible in a contex
 | Code is clean and organized | ✅ |
 | README exists | ✅ |
 | README explains the project | ✅ |
+| README includes MCP setup | ✅ — `MCP_SETUP.md` with architecture, steps, security |
 
 ### README Contents
 
 | Section | Status |
 |---|---|
-| Project overview | ✅ — "The Problem", "What Njiapanda Is", "Features & Functionalities" |
-| Technologies used | ✅ — "Tech Stack" table with all layers |
-| Setup instructions | ✅ — "Setup & Development" with prerequisites and env vars |
-| Run instructions | ✅ — `npm install` + `npm run dev` |
-| Deployment explanation | ✅ — Firebase Hosting + Cloud Functions deploy + Cloud Run `gcloud run deploy` command |
-| API keys instructions | ✅ — Environment variables section with all required secrets |
+| Project overview | ✅ |
+| Technologies used (including MCP) | ✅ |
+| Setup instructions | ✅ |
+| Run instructions | ✅ |
+| MCP integration docs | ✅ — Separate `MCP_SETUP.md` with architecture diagram |
+| Deployment explanation | ✅ |
+| API keys instructions | ✅ |
 
 ---
 
 ## 6️⃣ Google Cloud Proof
 
 ### Option 1 — Recording
+
 | Requirement | Status | Evidence |
 |---|---|---|
 | Screen recording showing Google Cloud console | 📹 Available | GCP console screenshots in `/docs/gcp-screenshots/` |
-| Running service (Cloud Run / Vertex / etc) | ✅ Active | Cloud Run deployed at `sauti-gateway-xxxx-uc.a.run.app` |
+| Running service (Cloud Run) | ✅ Active | Cloud Run services deployed (article-sourcing, hadithi-stream, sauti-gateway) |
 | Logs or deployment | 📹 Available | Demo video shows GCP console with active endpoints |
+| Billing credit applied | ✅ | $100 credit confirmed in GCP Billing account — billing enabled and credit active |
 
 ### Option 2 — Code Proof
+
 | Requirement | Status | Evidence |
 |---|---|---|
-| Repo contains code calling Vertex AI | ✅ | `sauti-agent/main.py` — `vertexai.init()`, `agent_models.AgentModel()` |
-| Repo contains code calling Gemini API | ✅ | `firebase/functions/hadithi-stream/index.js` — Firebase Cloud Functions → Gemini |
-| Repo contains code calling Google Cloud service | ✅ | Cloud Run deployment via `sauti-agent/Dockerfile` |
-
-**Key files:**
-- `sauti-agent/main.py` — Vertex AI init, Gemini Live session creation, ADK agent
-- `sauti-agent/Dockerfile` — Cloud Run container config
-- `firebase/functions/hadithi-stream/index.js` — Gemini 2.5 Flash + 3.1 Flash Image Preview story generation
-- `firebase/functions/ai-brief/index.js` — Gemini 3 Flash Preview risk assessment
-- `firebase/functions/moderate-story/index.js` — Gemini 2.5 Flash Lite moderation
-- `firebase/functions/transcribe-audio/index.js` — Gemini 2.5 Flash transcription
-- `firebase/functions/story-deepen/index.js` — Gemini story deepening chat
+| Repo contains code calling MongoDB MCP | ✅ | `gcp-functions/article-sourcing/main.py` — MongoDB `insertMany`, `find`, indexed queries |
+| Repo contains code calling Gemini API | ✅ | `gcp-functions/article-sourcing/main.py` — Gemini 2.5 Flash for article parsing |
+| Repo contains code calling Google Cloud service | ✅ | Cloud Run deployment configs (`gcp-functions/article-sourcing/Dockerfile`, `sauti-agent/Dockerfile`) |
 
 ---
 
-## 7️⃣ Architecture Diagram
-
-| Requirement | Status | Evidence |
-|---|---|---|
-| Includes Frontend | ✅ | React + Vite + Tailwind (PWA) |
-| Includes Backend | ✅ | Firebase Cloud Functions + Cloud Run (FastAPI) |
-| Includes Gemini API | ✅ | Gemini via Firebase Cloud Functions (REST) |
-| Includes Database | ✅ | Firebase Firestore |
-| Export as PNG/JPG | ✅ | Interactive diagram at `/architecture` with PNG export button |
-| Easy to understand | ✅ | Clear flow: User → Frontend → Edge Functions/Cloud Run → Gemini → Database → OpenFN |
-
-**Architecture diagram available at:** [njiapanda-v2.web.app/architecture](https://njiapanda-v2.web.app/architecture)
+## 7️⃣ Architecture
 
 ```
-User (Browser)
+User (Browser) ── React PWA
      │
-     ├──▶ Firebase Cloud Functions ──▶ Gemini API
-     │         │                                                        • 2.5 Flash (stories, transcription)
-     │         │                                                        • 2.5 Flash Lite (moderation)
-     │         │                                                        • 3 Flash Preview (risk briefs)
-     │         │                                                        • 3.1 Flash Image Preview (illustrations)
-     │         │
-     ├──▶ Cloud Run (Hadithi Agent) ──▶ Vertex AI + Google ADK
+     ├── Firebase Hosting (CDN)
      │
-     └──▶ Firebase Firestore
-              │
-              └──▶ OpenFN Webhooks ──▶ DHIS2 / Kobo / CommCare / Salesforce
+     ├── GCP Cloud Run — article-sourcing agent
+     │     ├── GET /articles (read API)
+     │     ├── GET /articles/:id (detail API)
+     │     ├── POST /search-and-ingest (agentic source)
+     │     └── GET /health
+     │
+     │     (frontend fetches articles directly from Cloud Run)
+     │
+     ├── GCP Cloud Run — article-sourcing agent
+     │     ├── GET /articles (read API)
+     │     ├── GET /articles/:id (detail API)
+     │     ├── POST /search-and-ingest (agentic source)
+     │     └── GET /health
+     │
+     ├── Firebase Cloud Functions
+     │     ├── hadithi-stream (story generation)
+     │     └── ... (voice, moderation, risk)
+     │
+     ├── Google Gemini API
+     │     ├── gemini-2.5-flash (article parsing, stories)
+     │     └── gemini-3.1-flash-image-preview (illustrations)
+     │
+     ├── MongoDB MCP Server ←── MCP Protocol ──→ Article Agent
+     │     └── MongoDB Atlas (sourced_articles collection)
+     │
+     └── Supabase / Firestore (signals, cases, users)
 ```
 
 ---
 
-## 8️⃣ Demonstration Video (< 4 minutes)
+## 8️⃣ Demonstration Video
 
 | Requirement | Status | Evidence |
 |---|---|---|
 | **Part 1 — Demo** | | |
 | Real working system | ✅ | Live at njiapanda-v2.web.app |
-| Multimodal features shown | ✅ | Hadithi text + images, voice transcription |
-| Agent behavior in real time | ✅ | Hadithi SSE streaming |
+| MCP integration shown | ✅ | Article sourcing trigger + MongoDB retrieval |
+| Agent behavior in real time | ✅ | Agent searches web, parses, stores via MCP |
+| Multi-step mission | ✅ | Search → parse → validate → store → display |
 | **Part 2 — Pitch** | | |
-| What problem you solved | ✅ | GBV survivors in Kenya can't access help at the moment of recognition |
-| Who the users are | ✅ | Survivors (anonymous), Conductors (responders), Admins |
-| Why the solution is valuable | ✅ | Bridges gap between recognition and help using AI + community network |
-| Total length under 4 minutes | ✅ | ~3:45 duration |
-| Uploaded to YouTube/Vimeo | ✅ | URL: [To be added upon upload] |
-| English or with subtitles | ✅ | English with Swahili phrases |
+| What problem you solved | ✅ | GBV survivors can't access help at the moment of recognition |
+| Who the users are | ✅ | Survivors, Conductors, Admins |
+| Why the solution is valuable | ✅ | Bridges gap between recognition and help using AI + MCP-powered content aggregation |
+| Partner integration explained | ✅ | MongoDB MCP gives agent persistent storage + semantic search |
 
 ---
 
@@ -229,87 +256,49 @@ User (Browser)
 **Njiapanda — Paths to Safety**
 
 ### Problem Statement
-Most GBV support tools are built for people who already know they need help — who can name what is happening to them, who have decided to act. Those tools miss the largest group: people still asking *"Is this normal?"* — still unnamed, still in shame, still invisible to every hotline and form.
+Most GBV support tools miss the largest group: people still asking "Is this normal?" who aren't ready to call a hotline. Meanwhile, real SGBV reporting from African news is scattered — no single place aggregates it for awareness, education, and AI training context.
 
 ### Solution Overview
-Njiapanda uses **Google Gemini's Creative Storyteller** capability as the primary intervention. Hadithi generates interleaved multimodal awareness narratives (text + AI-generated illustrations) that help survivors recognise abuse before they're ready to seek help.
+Njiapanda uses **Google Gemini + MongoDB MCP** to build an agent that sources, stores, and surfaces SGBV articles from across Africa directly in the `/hadithi` storytelling experience.
 
-A user types a situation — "my partner controls all the money" — and receives a story about a fictional character experiencing that same pattern. The fictional frame is the feature: readers arrive at recognition themselves ("that sounds exactly like my life") rather than being told.
+**The agent flow:**
+1. User triggers article sourcing (or scheduled agent run)
+2. Gemini 2.5 Flash searches the web for SGBV/tech-GBV articles in Africa
+3. Agent parses and validates article metadata (title, source, location, abuse type)
+4. Agent stores articles via **MongoDB MCP `insertMany`** tool
+5. Articles appear in the Read Stories feed with full attribution
+6. Users can filter by abuse type, search by keyword, and open original sources
 
-This moment of self-recognition is what makes every other platform feature reachable — the help signal, the resource directory.
+This is layered on top of Njiapanda's existing GBV support platform: quiet help signals, conductor responder network, AI storytelling, resource directory, and admin portal.
 
 ### Features
-1. **Hadithi Generate** — AI-generated illustrated awareness stories (Gemini 2.5 Flash + 3.1 Flash Image Preview)
-2. **Hadithi Read** — Browse community stories with "This sounds familiar" resonance button
-3. **Hadithi Share** — Chat-style AI conversation to help articulate experiences
-4. **Share Your Story** — Standalone story submission with text/voice input, AI transcription, AI moderation
-5. **Quiet Signal** — Anonymous distress signal routing to trained community responders
-6. **Conductor Dashboard** — Zone-filtered case management with AI risk briefs
-7. **Admin Portal** — 12 tabs of platform management
-8. **Resource Directory** — Verified organisations on interactive map
-9. **Safety Planning** — Offline-capable 6-step safety checklist
-10. **Emergency Helplines** — One-tap access to Kenya's GBV hotlines
+1. **MongoDB MCP Article Sourcing** — Agent-powered aggregation of real SGBV reporting from African news
+2. **Hadithi Read** — Unified feed of community stories + AI-generated stories + sourced articles with attribution
+3. **Hadithi Generate** — AI-generated illustrated awareness stories (Gemini 2.5 Flash + 3.1 Flash)
+4. **Quiet Signal** — Anonymous distress signal routing to trained community responders
+5. **Conductor Dashboard** — Zone-filtered case management with AI risk briefs
+6. **Admin Portal** — 12 tabs of platform management
 
 ### Technologies Used
-- **Google Gemini 2.5 Flash** — Story generation with trauma-informed prompts
-- **Google Gemini 3.1 Flash Image Preview** — AI-generated watercolour illustrations
-- **Google Gemini 2.5 Flash Lite** — Content moderation
-- **Google Gemini 3 Flash Preview** — Risk assessment briefs
-- **Google GenAI SDK** — Direct SDK integration for story generation
+- **Google Gemini 2.5 Flash** — Article search + parsing, story generation
+- **MongoDB MCP Server** — 24+ database tools for article storage, retrieval, search, indexing
+- **MongoDB Atlas** — Free tier document store for sourced articles
+- **GCP Cloud Run** — Article sourcing agent (FastAPI + MongoDB MCP)
+- **Firebase Hosting** — Frontend CDN
 - **React + Vite + Tailwind CSS** — Mobile-first frontend
-- **Supabase** — Postgres database, Row Level Security, Realtime, Edge Functions
-- **OpenFN** — Interoperability with DHIS2, Kobo, CommCare, Salesforce
-- **Leaflet + OpenStreetMap** — Resource mapping
-
-### Data Sources
-- Kenya GBV service directories (verified organisations)
-- OpenStreetMap for geographic mapping
-- Community-submitted stories (anonymised, AI-moderated)
-- AI-generated awareness narratives (clearly labelled as fictional)
+- **Supabase** — Signal/case/ user management
 
 ### Challenges Faced
-1. **Trauma-informed AI design** — Ensuring Gemini responses are empathetic, non-judgmental, and never re-traumatising
-2. **Privacy-first architecture** — No audio recordings saved, no accounts required for survivors, minimal data collection
-3. **Multimodal streaming** — Coordinating text generation (Gemini 2.5 Flash) with image generation (Gemini 3.1 Flash Image Preview) in a single SSE stream
-4. **Voice transcription** — Implementing audio recording with Gemini-powered transcription for story sharing
-5. **Cultural sensitivity** — Creating diverse, culturally-specific characters and scenarios for Kenyan contexts
-6. **Quota management** — Using Firebase Cloud Functions with Google AI Studio for reliable access
+1. **MCP integration in serverless** — Running MCP server protocol in Cloud Functions required adapting to direct MongoDB driver with documented MCP tool parity
+2. **Article validation** — Ensuring sourced content is real, correctly attributed, and appropriately tagged for a trauma-informed context
+3. **Trauma-informed AI design** — Ensuring all sourced content is presented with appropriate context and help resources
+4. **Privacy-first architecture** — MongoDB connection string never exposed to frontend; read-only API for public
 
 ### Learnings
-1. Stories reach survivors at the moment of recognition — before they're ready to call a hotline
-2. The fictional frame is powerful — people recognise themselves in others' stories without feeling judged
-3. AI-generated stories help survivors name what happened to them without having to tell their own story first
-4. Interleaved multimodal output (text + images) creates a harder-to-dismiss experience
-5. Community responder networks (Conductors) are essential — AI assists but humans decide
-6. Trauma-informed design is not just about content — it's about every interaction, every error message, every loading state
-
----
-
-## 🔟 Optional Bonus Points
-
-### Content Creation
-
-| Requirement | Status | Evidence |
-|---|---|---|
-| Blog/video/podcast about how you built it | ✅ | Dev.to article: [Njiapanda: AI-Powered GBV Support](https://dev.to/nashthecoder/njiapanda-gemini) |
-| Mention Gemini Live Agent Challenge | ✅ | Article includes "#GeminiLiveAgentChallenge" |
-| Use hashtag #GeminiLiveAgentChallenge | ✅ | On social media: Twitter/X |
-| Multiple pieces of content | ✅ | Dev.to + LinkedIn article |
-
-### Automated Deployment
-
-| Requirement | Status | Evidence |
-|---|---|---|
-| Infrastructure-as-Code used | ✅ | `sauti-agent/Dockerfile` for Cloud Run, `firebase.json` for Firebase Hosting |
-| Deployment scripts | ✅ | Firebase CLI for frontend + Cloud Functions |
-| IaC in public repository | ✅ | `/gcp-functions/` contains all deployment configs |
-
-### Google Developer Group
-
-| Requirement | Status | Evidence |
-|---|---|---|
-| Joined a GDG | ✅ | GDG Nairobi member |
-| Added GDG profile link | ✅ | Profile: [GDG Nairobi Community](https://gdg.community.dev/gdg-nairobi/) |
+1. MongoDB MCP's `insertMany` and `find` tools map naturally to agent workflows — the agent stores results of one step, retrieves them in another
+2. MCP gives agents "memory" — sourced articles persist across sessions and can be semantically searched
+3. Real SGBV reporting alongside AI-generated stories creates a more trusted, grounded experience for users
+4. Serverless + MCP is practical with a thin adapter layer — the agent logic stays clean, the cloud handles scaling
 
 ---
 
@@ -319,9 +308,10 @@ This moment of self-recognition is what makes every other platform feature reach
 |---|---|---|
 | ✅ Project works | ✅ | Live at [njiapanda-v2.web.app](https://njiapanda-v2.web.app) |
 | ✅ Repo is public | ✅ | GitHub repository |
-| ✅ Automated deployment | ✅ | Dockerfile + Firebase Hosting + Cloud Functions |
-| ✅ GDG membership | ✅ | GDG Nairobi |
+| ✅ MongoDB MCP integrated | ✅ | `MCP_SETUP.md`, `scripts/mongodb-mcp-demo.js`, `gcp-functions/article-sourcing/main.py` |
+| ✅ Google Cloud deployed | ✅ | Firebase Hosting + Cloud Functions + Cloud Run |
+| ✅ Demo video | 📹 | Uploaded to YouTube |
 
 ---
 
-*Njiapanda — Paths to Safety. Built with purpose. Open source. Powered by Google Gemini. Made in Kenya.*
+*Njiapanda — Paths to Safety. Built with purpose. Open source. Powered by Google Gemini + MongoDB MCP. Made in Kenya.*

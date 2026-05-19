@@ -25,6 +25,8 @@ import WhyNjiapanda from "./pages/WhyNjiapanda";
 import Sauti from "./pages/Sauti";
 import Hadithi from "./pages/Hadithi";
 import ArchitectureDiagram from "./pages/ArchitectureDiagram";
+import SelfCheck from "./pages/SelfCheck";
+import ChallengeContext from "./pages/ChallengeContext";
 import NotFound from "./pages/NotFound";
 import EmergencyExitButton from "./components/EmergencyExitButton";
 import BottomNav from "./components/BottomNav";
@@ -39,10 +41,10 @@ function AppInner() {
   return (
     <BrowserRouter>
       <SkipLink />
-      <EmergencyExitButton />
       <Routes>
         <Route path="/" element={<Index />} />
         <Route path="/share" element={<ShareStory />} />
+        <Route path="/self-check" element={<SelfCheck />} />
         <Route path="/stories" element={<Navigate to="/hadithi" replace />} />
         <Route path="/safety" element={<Safety />} />
         <Route path="/resources" element={<Resources />} />
@@ -59,9 +61,13 @@ function AppInner() {
         <Route path="/sauti" element={<Sauti />} />
         <Route path="/hadithi" element={<Hadithi />} />
         <Route path="/architecture" element={<ArchitectureDiagram />} />
+        <Route path="/challenge" element={<ChallengeContext />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
       <BottomNav />
+      <div className="fixed bottom-2 left-0 w-full flex justify-center z-50 pointer-events-none">
+        <div className="pointer-events-auto"><EmergencyExitButton /></div>
+      </div>
       <FeedbackButton />
     </BrowserRouter>
   );
