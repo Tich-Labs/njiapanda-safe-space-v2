@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { ingestStoryUrl } from "@/lib/articleService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -85,12 +86,46 @@ export default function AdminStoryCMS() {
     }
   };
 
+  const [ingestingSafeEqual, setIngestingSafeEqual] = useState(false);
+  const SAFEANDEQUAL_URL = "https://safeandequal.org.au/understanding-family-violence/stories/";
+
+  const ingestSafeAndEqual = async () => {
+    setIngestingSafeEqual(true);
+    toast.info("Importing SafeAndEqual stories...");
+    try {
+      const result = await ingestStoryUrl({ url: SAFEANDEQUAL_URL });
+      setIngestingSafeEqual(false);
+      if (result.success) {
+        toast.success("SafeAndEqual story imported successfully");
+      } else {
+        toast.error(result.error || "Failed to import SafeAndEqual story");
+      }
+    } catch (err: any) {
+      setIngestingSafeEqual(false);
+      toast.error(err?.message || "Failed to import SafeAndEqual story");
+    }
+  };
+
   return (
     <div className="p-8">
       <div className="mb-6">
-        <h2 className="font-display text-2xl font-semibold text-foreground">Create Story</h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Add new stories to the library. Stories marked "approved" will be visible immediately.
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="font-display text-2xl font-semibold text-foreground">Create Story</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Add new stories to the library. Stories marked "approved" will be visible immediately.
+            </p>
+          </div>
+          <Button
+            onClick={ingestSafeAndEqual}
+            disabled={ingestingSafeEqual}
+            variant="secondary"
+          >
+            {ingestingSafeEqual ? "Importing…" : "Ingest SafeAndEqual Stories"}
+          </Button>
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Use the SafeAndEqual story page to crowdsource survivor narratives automatically.
         </p>
       </div>
 
