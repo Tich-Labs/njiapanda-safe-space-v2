@@ -4,6 +4,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { ArrowLeft, Shield } from "lucide-react";
 
+const TEST_ADMIN_EMAIL = "admin@njiapanda.test";
+const TEST_ADMIN_PASSWORD = "TestAdmin123!";
+
 const AdminLogin = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -130,12 +133,24 @@ const AdminLogin = () => {
 
         <div className="mt-4 space-y-2 text-center">
           {mode === "login" && (
-            <button
-              onClick={handleForgotPassword}
-              className="w-full text-sm text-muted-foreground hover:text-foreground"
-            >
-              Forgot password?
-            </button>
+            <>
+              <button
+                onClick={() => {
+                  setEmail(TEST_ADMIN_EMAIL);
+                  setPassword(TEST_ADMIN_PASSWORD);
+                  toast.success("Test admin credentials filled in");
+                }}
+                className="w-full rounded-lg border border-input bg-card px-3 py-2.5 text-sm text-foreground hover:bg-accent/80"
+              >
+                Use test admin login
+              </button>
+              <button
+                onClick={handleForgotPassword}
+                className="w-full text-sm text-muted-foreground hover:text-foreground"
+              >
+                Forgot password?
+              </button>
+            </>
           )}
           <button
             onClick={() => setMode(mode === "login" ? "signup" : "login")}
