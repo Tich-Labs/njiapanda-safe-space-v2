@@ -10,19 +10,20 @@
 ## 1️⃣ Partner Track Selection
 
 | Requirement | Status | Evidence |
-|---|---|---|
+|---|---|---|---|
 | Selected partner track | ✅ | **MongoDB Partner Bucket** |
-| Meaningful MCP integration | ✅ | Hadithi agent uses MongoDB MCP server tools for article sourcing, storage, and retrieval |
-| MCP gives agent "superpowers" | ✅ | MongoDB MCP enables: semantic search across sourced articles, geolocation-filtered queries, full-text search, and persistent article storage |
+| Meaningful MCP integration | ✅ | Hadithi agent uses MongoDB for article sourcing, user story submission, and retrieval — full bidirectional persistence |
+| MCP gives agent "superpowers" | ✅ | MongoDB enables: semantic search across sourced articles, geolocation-filtered queries, full-text search, persistent user story storage, and AI-moderated story submission |
 
 ### Why MongoDB
 
-MongoDB MCP server provides 24 database tools + 13 Atlas management tools that the Hadithi agent uses to:
+MongoDB MCP provides 24+ database tools that the Hadithi agent uses to:
 1. **`insertMany`** — Store sourced SGBV articles with full metadata (source, location, abuse type)
-2. **`find`** — Retrieve articles by abuse type, location, or keyword search
-3. **`aggregate`** — Complex filtering and sorted queries for the Read Stories feed
-4. **`createIndex`** — Enable full-text and future vector search across article content
-5. **`listCollections`** — Discover available data sources within the agent workflow
+2. **`insertOne`** — Store user-submitted stories from voice transcription and Share tab
+3. **`find`** — Retrieve articles by abuse type, location, or keyword search
+4. **`aggregate`** — Complex filtering and sorted queries for the Read Stories feed
+5. **`createIndex`** — Enable full-text and future vector search across article content
+6. **`listCollections`** — Discover available data sources within the agent workflow
 
 ---
 
@@ -82,8 +83,8 @@ MongoDB MCP server provides 24 database tools + 13 Atlas management tools that t
 | Requirement | Status | Evidence |
 |---|---|---|
 | User interface works | ✅ | Mobile-first React PWA at [njiapanda-v2.web.app](https://njiapanda-v2.web.app) |
-| Agent processes multimodal input | ✅ | Text prompts, voice recording, web article search |
-| Agent generates useful output | ✅ | Sourced articles, illustrated awareness stories, structured risk briefs |
+| Agent processes multimodal input | ✅ | Text prompts, voice recording (Gemini 2.5 Flash transcription), web article search |
+| Agent generates useful output | ✅ | Sourced articles, illustrated awareness stories, transcribed voice stories, structured risk briefs |
 | Agent demonstrates autonomous behavior | ✅ | Article sourcing agent: independently searches web, parses, and stores via MCP |
 | Agent solves a real problem | ✅ | Helps GBV survivors recognise abuse through stories + real reporting |
 | Partner MCP integration functional | ✅ | MongoDB MCP server stores/retrieves articles with full attribution |
@@ -93,9 +94,13 @@ MongoDB MCP server provides 24 database tools + 13 Atlas management tools that t
 
 1. **Article Sourcing Agent** — Triggered by user or scheduled. Searches web for SGBV/tech-GBV articles in Africa, parses with Gemini, validates, stores via MongoDB MCP tools, and surfaces in the Read Stories feed with full source attribution.
 
-2. **Hadithi Story Generation** — Creates interleaved text + illustration awareness narratives with culturally-specific Kenyan characters, locations, and scenarios.
+2. **Voice-to-Story Pipeline** — Audio recorded in-browser, transcribed by Gemini 2.5 Flash (native audio support, not Google Cloud Speech-to-Text), reviewed by user, then stored to MongoDB via agent backend.
 
-3. **Conductor Risk Assessment** — Automatically assesses incoming help signals and generates structured risk briefs.
+3. **User Story Submission Agent** — Stories from the Share tab are AI-moderated for safety via Gemini, then stored in MongoDB alongside sourced stories, appearing immediately in the Read tab.
+
+4. **Hadithi Story Generation** — Creates interleaved text + illustration awareness narratives with culturally-specific Kenyan characters, locations, and scenarios.
+
+5. **Conductor Risk Assessment** — Automatically assesses incoming help signals and generates structured risk briefs.
 
 ---
 
@@ -207,26 +212,22 @@ User (Browser) ── React PWA
      │     ├── GET /articles (read API)
      │     ├── GET /articles/:id (detail API)
      │     ├── POST /search-and-ingest (agentic source)
+     │     ├── POST /ingest-url (single URL ingest)
+     │     ├── POST /submit-story (user story submission → AI moderation → MongoDB)
      │     └── GET /health
      │
      │     (frontend fetches articles directly from Cloud Run)
-     │
-     ├── GCP Cloud Run — article-sourcing agent
-     │     ├── GET /articles (read API)
-     │     ├── GET /articles/:id (detail API)
-     │     ├── POST /search-and-ingest (agentic source)
-     │     └── GET /health
      │
      ├── Firebase Cloud Functions
      │     ├── hadithi-stream (story generation)
      │     └── ... (voice, moderation, risk)
      │
      ├── Google Gemini API
-     │     ├── gemini-2.5-flash (article parsing, stories)
+     │     ├── gemini-2.5-flash (article parsing, stories, voice transcription)
      │     └── gemini-3.1-flash-image-preview (illustrations)
      │
      ├── MongoDB MCP Server ←── MCP Protocol ──→ Article Agent
-     │     └── MongoDB Atlas (sourced_articles collection)
+     │     └── MongoDB Atlas (sourced_stories collection)
      │
      └── Supabase / Firestore (signals, cases, users)
 ```
@@ -275,9 +276,11 @@ This is layered on top of Njiapanda's existing GBV support platform: quiet help 
 1. **MongoDB MCP Article Sourcing** — Agent-powered aggregation of real SGBV reporting from African news
 2. **Hadithi Read** — Unified feed of community stories + AI-generated stories + sourced articles with attribution
 3. **Hadithi Generate** — AI-generated illustrated awareness stories (Gemini 2.5 Flash + 3.1 Flash)
-4. **Quiet Signal** — Anonymous distress signal routing to trained community responders
-5. **Conductor Dashboard** — Zone-filtered case management with AI risk briefs
-6. **Admin Portal** — 12 tabs of platform management
+4. **Voice Transcription (Gemini Audio)** — Browser recording transcribed by Gemini 2.5 Flash natively (no Google Cloud Speech-to-Text dependency)
+5. **User Story Submission via MongoDB** — Share tab stories persisted to MongoDB with AI safety moderation
+6. **Quiet Signal** — Anonymous distress signal routing to trained community responders
+7. **Conductor Dashboard** — Zone-filtered case management with AI risk briefs
+8. **Admin Portal** — 12 tabs of platform management
 
 ### Technologies Used
 - **Google Gemini 2.5 Flash** — Article search + parsing, story generation

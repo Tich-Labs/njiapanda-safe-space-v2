@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -79,16 +80,23 @@ export default function FeedbackButton() {
 
   return (
     <Dialog open={open} onOpenChange={(o) => { setOpen(o); if (!o) reset(); }}>
-      <DialogTrigger asChild>
-        <Button
-          size="icon"
-          variant="secondary"
-          className="fixed bottom-20 right-4 z-40 h-12 w-12 rounded-full shadow-lg md:bottom-6"
-          aria-label="Send feedback"
-        >
-          <MessageSquarePlus className="h-5 w-5" />
-        </Button>
-      </DialogTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DialogTrigger asChild>
+            <Button
+              size="icon"
+              variant="default"
+              className="fixed bottom-24 right-4 z-50 h-12 w-12 rounded-full shadow-xl md:bottom-20"
+              aria-label="Send feedback"
+            >
+              <MessageSquarePlus className="h-5 w-5" />
+            </Button>
+          </DialogTrigger>
+        </TooltipTrigger>
+        <TooltipContent side="top" sideOffset={6}>
+          Send feedback
+        </TooltipContent>
+      </Tooltip>
 
       <DialogContent className="max-w-sm">
         <DialogHeader>

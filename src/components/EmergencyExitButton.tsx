@@ -30,15 +30,15 @@ const EmergencyExitButton = () => {
       <TooltipTrigger asChild>
         <button
           onClick={handleExit}
-          className="fixed bottom-24 right-4 z-[9999] flex h-14 w-14 items-center justify-center rounded-full bg-emergency text-emergency-foreground shadow-lg transition-transform hover:scale-105 active:scale-95 animate-pulse-soft focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emergency focus-visible:ring-offset-2 focus-visible:ring-offset-card sm:h-auto sm:w-auto sm:gap-1.5 sm:rounded-full sm:px-4 sm:py-3"
-          aria-label="Emergency exit — leave this page immediately"
+          className="fixed top-4 right-4 z-[9999] flex items-center gap-2 rounded-full bg-emergency px-4 py-3 text-sm font-semibold text-emergency-foreground shadow-lg transition-transform hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emergency focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+          aria-label="Quick exit — leaves this page immediately"
         >
-          <X className="h-5 w-5" aria-hidden="true" />
-          <span className="hidden sm:inline text-xs font-semibold">Exit</span>
+          <X className="h-4 w-4" aria-hidden="true" />
+          Quick Exit
         </button>
       </TooltipTrigger>
       <TooltipContent side="top" sideOffset={8}>
-        Anonymous by default. You can leave anytime.
+        Leave this page immediately.
       </TooltipContent>
     </Tooltip>
   );

@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getStories, addStory, incrementResonance } from "@/lib/localStories";
 import type { LocalStory } from "@/lib/localStories";
-import { fetchArticles, triggerArticleSearch, ingestStoryUrl } from "@/lib/articleService";
+import { fetchArticles, triggerArticleSearch, ingestStoryUrl, submitStory } from "@/lib/articleService";
 
 function stripMarkdown(text: string): string {
   return text
@@ -140,14 +140,22 @@ const Hadithi = () => {
     if (!fullText || !shareAbuseType || sharing) return;
     setSharing(true);
     try {
+      const title = fullText.split(".")[0].slice(0, 60) || "Anonymous";
       await addStory({
-        title: fullText.split(".")[0].slice(0, 60) || "Anonymous",
+        title,
         text: fullText,
         abuse_type: shareAbuseType || "other",
         language: "en",
         source: "user_submission",
         status: "pending",
         tags: [],
+      });
+      // Also store in MongoDB via the agent backend
+      await submitStory({
+        text: fullText,
+        title,
+        abuse_type: shareAbuseType || "other",
+        language: "en",
       });
       setShareSubmitted(true);
       setShareText("");

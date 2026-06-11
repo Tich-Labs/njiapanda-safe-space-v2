@@ -30,6 +30,8 @@ const LANGUAGES = ["English", "Swahili"];
 
 export default function AdminStoryCMS() {
   const [saving, setSaving] = useState(false);
+  const [urlInput, setUrlInput] = useState("");
+  const [ingestingUrl, setIngestingUrl] = useState(false);
   const [form, setForm] = useState({
     title: "",
     text: "",
@@ -43,6 +45,29 @@ export default function AdminStoryCMS() {
 
   const update = (field: string, value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }));
+
+  const handleIngestUrl = async () => {
+    const url = urlInput.trim();
+    if (!url) {
+      toast.error("Please enter a verified story URL to ingest");
+      return;
+    }
+    setIngestingUrl(true);
+    toast.info("Fetching and ingesting verified story...");
+    try {
+      const result = await ingestStoryUrl({ url });
+      if (result.success) {
+        toast.success("Story ingested successfully");
+        setUrlInput("");
+      } else {
+        toast.error(result.error || "Failed to ingest story URL");
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to ingest story URL");
+    } finally {
+      setIngestingUrl(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,26 +111,6 @@ export default function AdminStoryCMS() {
     }
   };
 
-  const [ingestingSafeEqual, setIngestingSafeEqual] = useState(false);
-  const SAFEANDEQUAL_URL = "https://safeandequal.org.au/understanding-family-violence/stories/";
-
-  const ingestSafeAndEqual = async () => {
-    setIngestingSafeEqual(true);
-    toast.info("Importing SafeAndEqual stories...");
-    try {
-      const result = await ingestStoryUrl({ url: SAFEANDEQUAL_URL });
-      setIngestingSafeEqual(false);
-      if (result.success) {
-        toast.success("SafeAndEqual story imported successfully");
-      } else {
-        toast.error(result.error || "Failed to import SafeAndEqual story");
-      }
-    } catch (err: any) {
-      setIngestingSafeEqual(false);
-      toast.error(err?.message || "Failed to import SafeAndEqual story");
-    }
-  };
-
   return (
     <div className="p-8">
       <div className="mb-6">
@@ -116,17 +121,27 @@ export default function AdminStoryCMS() {
               Add new stories to the library. Stories marked "approved" will be visible immediately.
             </p>
           </div>
-          <Button
-            onClick={ingestSafeAndEqual}
-            disabled={ingestingSafeEqual}
-            variant="secondary"
-          >
-            {ingestingSafeEqual ? "Importing…" : "Ingest SafeAndEqual Stories"}
-          </Button>
         </div>
-        <p className="mt-2 text-xs text-muted-foreground">
-          Use the SafeAndEqual story page to crowdsource survivor narratives automatically.
-        </p>
+
+        <Card className="bg-surface border border-border p-4">
+          <div className="mb-3">
+            <h3 className="text-base font-semibold text-foreground">Manual URL ingestion</h3>
+            <p className="text-sm text-muted-foreground">
+              Paste a verified story URL to ingest a single story using AI extraction.
+            </p>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Input
+              type="url"
+              value={urlInput}
+              onChange={(e) => setUrlInput(e.target.value)}
+              placeholder="https://example.org/survivor-story"
+            />
+            <Button onClick={handleIngestUrl} disabled={ingestingUrl} className="min-w-[12rem]">
+              {ingestingUrl ? "Ingesting…" : "Ingest URL"}
+            </Button>
+          </div>
+        </Card>
       </div>
 
       <Card className="mx-auto max-w-2xl">

@@ -2,8 +2,8 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { Mic, Square, RotateCcw, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const MAX_DURATION = 90; // seconds
 
@@ -118,34 +118,29 @@ export default function AudioRecorder({ onTranscript }: AudioRecorderProps) {
           const base64 = (reader.result as string).split(",")[1];
 
           try {
-            // Use Google Speech-to-Text directly
             const apiKey = import.meta.env.VITE_GOOGLE_AI_STUDIO_API_KEY;
             if (!apiKey) {
               throw new Error("No API key");
             }
 
-            const response = await fetch(
-              `https://speech.googleapis.com/v1/speech:recognize?key=${apiKey}`,
+            const genAI = new GoogleGenerativeAI(apiKey);
+            const model = genAI.getGenerativeModel({
+              model: "gemini-2.5-flash",
+            });
+
+            const result = await model.generateContent([
               {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  config: {
-                    encoding: "WEBM_OPUS",
-                    sampleRateHertz: 48000,
-                    languageCode: "en-US",
-                  },
-                  audio: { content: base64 },
-                }),
-              }
-            );
+                text: "Transcribe this audio exactly as spoken. Return only the transcribed text, no explanation, no formatting.",
+              },
+              {
+                inlineData: {
+                  mimeType: "audio/webm",
+                  data: base64,
+                },
+              },
+            ]);
 
-            if (!response.ok) {
-              throw new Error("Speech API error");
-            }
-
-            const data = await response.json();
-            const transcription = data.results?.[0]?.alternatives?.[0]?.transcript || "";
+            const transcription = result.response.text().trim();
             
             if (!transcription) {
               toast.error("No speech detected. Please try again.");

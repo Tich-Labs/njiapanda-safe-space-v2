@@ -1,6 +1,6 @@
 # MongoDB MCP Server Setup
 
-Integrates MongoDB Model Context Protocol (MCP) server with Njiapanda's Hadithi agent for sourcing, storing, and retrieving SGBV articles.
+Integrates MongoDB Model Context Protocol (MCP) server with Njiapanda's Hadithi agent for sourcing, storing, and retrieving SGBV survivor stories and user submissions.
 
 ## What is MCP?
 
@@ -13,7 +13,8 @@ Hadithi Agent (Gemini)
     │
     ├── uses MongoDB MCP tools
     │     ├── insertMany()       → store sourced articles
-    │     ├── find()             → query by abuse_type/location
+    │     ├── insertOne()        → store user-submitted stories
+    │     ├── find()             → query by abuse_type/location/status
     │     ├── aggregate()        → complex filtering + sorting
     │     ├── createIndex()      → enable full-text / vector search
     │     └── listCollections()  → discover data sources
@@ -22,7 +23,7 @@ Hadithi Agent (Gemini)
             │
     MongoDB MCP Server (npx @mongodb-js/mongodb-mcp-server)
             │
-            └── MongoDB Atlas (free tier M0)
+            └── MongoDB Atlas (free tier M0 — sourced_stories collection)
 ```
 
 ## Prerequisites
@@ -49,7 +50,7 @@ Add to `.env`:
 ```bash
 MONGODB_CONNECTION_STRING=mongodb+srv://njiapanda-agent:<password>@<cluster>.mongodb.net/njiapanda?retryWrites=true&w=majority
 MONGODB_DB_NAME=njiapanda
-MONGODB_COLLECTION_ARTICLES=sourced_articles
+MONGODB_COLLECTION_STORIES=sourced_stories
 ```
 
 ## Step 3: Configure MongoDB MCP Server
@@ -97,40 +98,61 @@ This script simulates the Hadithi agent using MongoDB MCP tools:
 4. `createIndex` — enable text search
 5. `aggregate` — complex data retrieval
 
+## API Endpoints
+
+| Method | Path | Description | Access |
+|--------|------|-------------|--------|
+| `GET` | `/health` | Service health + MongoDB status | Public |
+| `GET` | `/articles` | List stories (sourced + user submissions), filterable | Public |
+| `GET` | `/articles/{id}` | Get single story by ObjectId | Public |
+| `POST` | `/search-and-ingest` | Agent: search web for survivor stories, parse with Gemini, store in MongoDB | Public |
+| `POST` | `/ingest-url` | Agent: fetch a URL, extract survivor narrative via Gemini, store in MongoDB | Public |
+| `POST` | `/submit-story` | Agent: accept user-submitted story, AI safety moderation, store in MongoDB | Public |
+
 ## Step 6: Deploy to Cloud Run
 
 ```bash
 cd gcp-functions/article-sourcing
 
+# Set env vars
+export MONGODB_CONNECTION_STRING="mongodb+srv://..."
+export GEMINI_API_KEY="your_key"
+
 gcloud run deploy article-sourcing \
   --source . \
   --region us-central1 \
   --allow-unauthenticated \
-  --set-env-vars "MONGODB_CONNECTION_STRING=$MONGODB_CONNECTION_STRING,GEMINI_API_KEY=$GEMINI_API_KEY"
+  --memory 512Mi \
+  --timeout 300 \
+  --set-env-vars "MONGODB_CONNECTION_STRING=$MONGODB_CONNECTION_STRING,GEMINI_API_KEY=$GEMINI_API_KEY,MONGODB_DB_NAME=njiapanda,MONGODB_COLLECTION_STORIES=sourced_stories"
+
+# After deploy, set your URL in .env:
+# VITE_ARTICLE_SOURCING_URL=https://article-sourcing-xxxx-uc.a.run.app
 ```
 
-## Security Best Practices
+## Security
 
 | Practice | Implementation |
 |---|---|
 | **No exposed secrets** | MongoDB connection string is server-side only (`process.env`), never in frontend code |
 | **Read-only API for frontend** | Cloud Run service only exposes read endpoints (GET) to the public |
-| **Write restricted to agent** | Only the search-and-ingest endpoint (authenticated) can write |
+| **Write restricted to agent** | Only agent endpoints (search-and-ingest, ingest-url, submit-story) can write |
 | **Input sanitization** | All user inputs validated, trimmed, and length-limited |
 | **Connection pooling** | MongoDB client is reused across invocations (warm starts) |
 | **Least privilege** | Database user has `readWrite` only on `njiapanda` database |
-| **Query limits** | Max 100 articles returned, full text excluded in list views |
+| **Query limits** | Max 100 stories returned, full text excluded in list views |
 
 ## MongoDB MCP Tools Used
 
 | Tool | Purpose |
 |---|---|
 | `listCollections` | Discover available data sources |
-| `find` | Query articles by abuse_type, location, text search |
+| `find` | Query stories by abuse_type, location, text search |
 | `insertMany` | Store batch of sourced articles |
+| `insertOne` | Store individual user-submitted stories from Share/Voice tab |
 | `aggregate` | Complex filtering and sorting |
 | `createIndex` | Enable text and vector search indexes |
-| `countDocuments` | Article counts by category |
+| `countDocuments` | Story counts by category |
 
 ## Troubleshooting
 

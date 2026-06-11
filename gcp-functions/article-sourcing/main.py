@@ -92,6 +92,14 @@ class IngestUrlRequest(BaseModel):
     location: Optional[str] = None
 
 
+class SubmitStoryRequest(BaseModel):
+    text: str = Field(..., min_length=1, max_length=10000, description="Story text")
+    title: Optional[str] = None
+    abuse_type: Optional[str] = None
+    language: Optional[str] = "en"
+    tags: Optional[list[str]] = None
+
+
 def sanitize(s: Optional[str], max_len: int = 3000) -> str:
     if not s or not isinstance(s, str):
         return ""
@@ -128,7 +136,7 @@ async def list_stories(
     if collection is None:
         return []
 
-    query = {"source_type": "sourced_story"}
+    query = {"source_type": {"$in": ["sourced_story", "user_submission"]}, "status": "approved"}
     if abuse_type:
         query["abuse_type"] = {"$regex": sanitize(abuse_type), "$options": "i"}
     if location:
@@ -290,6 +298,92 @@ Return a valid JSON array only, no markdown, no explanation. Use simple English.
     logger.info(f"Stored {len(result.inserted_ids)} survivor stories via MongoDB")
 
     return {"success": True, "articles_count": len(result.inserted_ids)}
+
+
+@app.post("/submit-story")
+async def submit_story(payload: SubmitStoryRequest):
+    if collection is None:
+        raise HTTPException(status_code=503, detail="Database not connected")
+
+    text = sanitize(payload.text, 10000)
+    if not text.strip():
+        raise HTTPException(status_code=400, detail="Story text is required")
+
+    title = sanitize(payload.title or text.split(".")[0][:120], 200)
+    abuse_type = sanitize(payload.abuse_type or "", 50)
+    language = sanitize(payload.language or "en", 10)
+    tags = [sanitize(t, 50) for t in (payload.tags or []) if sanitize(t, 50)]
+
+    if abuse_type and abuse_type.lower() not in VALID_ABUSE_TYPES:
+        abuse_type = "Other"
+
+    if GEMINI_API_KEY:
+        genai.configure(api_key=GEMINI_API_KEY)
+        model = genai.GenerativeModel("gemini-2.5-flash")
+        review_prompt = f"""Review the following survivor story submission.
+
+Return a JSON object with EXACTLY these fields:
+{{
+  "safe": true or false,
+  "abuse_type": "Type of abuse described",
+  "summary": "One-sentence summary",
+  "tags": ["up to", "3", "relevant", "tags"],
+  "reason": "If unsafe, explain briefly why in 5 words or fewer"
+}}
+
+Rules:
+- The story MUST be about gender-based violence or a personal struggle.
+- Reject if it contains hate speech, spam, self-harm details, or is off-topic.
+- Be inclusive — allow any GBV experience, even if described imperfectly.
+
+Story:
+{text[:4000]}"""
+
+        try:
+            response = model.generate_content(review_prompt, generation_config={"temperature": 0.1, "max_output_tokens": 1024})
+            json_match = re_module.search(r"\{[\s\S]*\}", response.text)
+            if json_match:
+                review = json.loads(json_match.group(0))
+                if not review.get("safe", True):
+                    logger.warning(f"Story rejected by safety review: {review.get('reason', 'No reason')}")
+                    raise HTTPException(status_code=400, detail="Story could not be published. Please try again with different content.")
+                if not abuse_type:
+                    abuse_type = sanitize(review.get("abuse_type", ""), 50)
+                if not tags:
+                    tags = [sanitize(t, 50) for t in review.get("tags", []) if sanitize(t, 50)]
+                summary = sanitize(review.get("summary", text[:200]), 500)
+            else:
+                summary = text[:200]
+        except Exception as e:
+            logger.error(f"Safety review failed: {e}")
+            if "400" in str(e):
+                raise
+            summary = text[:200]
+    else:
+        summary = text[:200]
+
+    story_doc = {
+        "title": title,
+        "summary": summary,
+        "text": text,
+        "source_url": "",
+        "source_name": "Anonymous",
+        "location": "Africa",
+        "abuse_type": abuse_type or "Other",
+        "tags": tags or [],
+        "language": language,
+        "source": "user_submission",
+        "source_type": "user_submission",
+        "status": "approved",
+        "resonance_count": 0,
+        "created_at": datetime.utcnow().isoformat(),
+    }
+
+    result = collection.insert_one(story_doc)
+    story_doc["id"] = str(result.inserted_id)
+    logger.info(f"User story submitted: {title[:60]}")
+
+    return {"success": True, "story": story_doc}
 
 
 @app.post("/ingest-url")

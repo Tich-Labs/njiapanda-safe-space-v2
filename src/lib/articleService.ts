@@ -117,3 +117,26 @@ export async function ingestStoryUrl(params: {
     return { success: false, error: err.message };
   }
 }
+
+export async function submitStory(params: {
+  text: string;
+  title?: string;
+  abuse_type?: string;
+  language?: string;
+  tags?: string[];
+}): Promise<{ success: boolean; story?: any; error?: string }> {
+  try {
+    const res = await fetch(`${API_BASE}/submit-story`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(params),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      return { success: false, error: err.detail || "Story submission failed" };
+    }
+    return await res.json();
+  } catch (err: any) {
+    return { success: false, error: err.message };
+  }
+}
