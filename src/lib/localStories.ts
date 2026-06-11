@@ -24,7 +24,8 @@ export interface LocalStory {
 const STORAGE_KEY = "hadithi_stories";
 
 export const addStory = async (story: Omit<LocalStory, "id" | "created_at" | "resonance_count">): Promise<string> => {
-  const stories = getStories();
+  const data = localStorage.getItem(STORAGE_KEY);
+  const stories: LocalStory[] = data ? JSON.parse(data) : [];
   const newStory: LocalStory = {
     ...story,
     id: crypto.randomUUID(),
